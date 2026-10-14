@@ -95,6 +95,7 @@ export async function syncStatsToCloud(userId: string, stats: PlayerStats, playe
       healsUsed: stats.healsUsed || 0,
       distanceTraveled: stats.distanceTraveled || 0,
       questsCompleted: stats.questsCompleted || [],
+      ownedItems: stats.ownedItems || [],
       updatedAt: serverTimestamp()
     }, { merge: true });
 
@@ -140,6 +141,7 @@ export async function loadStatsFromCloud(userId: string): Promise<Partial<Player
         healsUsed: data.healsUsed || 0,
         distanceTraveled: data.distanceTraveled || 0,
         questsCompleted: data.questsCompleted || [],
+        ownedItems: data.ownedItems || [],
       };
     }
   } catch (error: any) {

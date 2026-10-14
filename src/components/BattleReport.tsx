@@ -15,6 +15,7 @@ interface BattleReportProps {
   skinColor: string;
   hatStyle: string;
   patternStyle: string;
+  accessoryStyle: string;
   onRestart: () => void;
   stats: PlayerStats;
   activeAgent?: AIAgentConfig;
@@ -41,6 +42,7 @@ export default function BattleReport({
   skinColor,
   hatStyle,
   patternStyle,
+  accessoryStyle,
   onRestart,
   stats,
   questXp = 0, // vibe: XP gagnée par les quêtes
@@ -114,6 +116,7 @@ export default function BattleReport({
             skinColor,
             hatStyle,
             patternStyle,
+            accessoryStyle,
           }),
         });
         

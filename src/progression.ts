@@ -67,9 +67,21 @@ export function isHatLocked(hat: string, playerLevel: number): boolean {
   return false;
 }
 
+export function isAccessoryLocked(accessory: string, playerLevel: number): boolean {
+  if (accessory === 'backpack' && playerLevel < 3) return true;
+  if (accessory === 'cape' && playerLevel < 6) return true;
+  if (accessory === 'wings' && playerLevel < 9) return true;
+  if (accessory === 'glasses' && playerLevel < 2) return true;
+  return false;
+}
+
 export function isPatternLocked(pattern: string, playerLevel: number): boolean {
   if (pattern === 'camo' && playerLevel < 5) return true;
   if (pattern === 'lightning' && playerLevel < 10) return true;
+  if (pattern === 'checkered' && playerLevel < 3) return true;
+  if (pattern === 'hearts' && playerLevel < 7) return true;
+  if (pattern === 'neon_grid' && playerLevel < 12) return true;
+  if (pattern === 'glitch' && playerLevel < 15) return true;
   return false;
 }
 
@@ -78,7 +90,8 @@ const DAILY_QUESTS_POOL: Partial<Quest>[] = [
   { title: 'Marathonien', description: 'Parcourir 5000 mètres', type: 'distance', targetValue: 5000, rewardXp: 300, category: 'daily' },
   { title: 'Soin d\'Urgence', description: 'Utiliser 4 objets de soin', type: 'heal', targetValue: 4, rewardXp: 250, category: 'daily' },
   { title: 'Spécialiste-Pistolet', description: 'Faire 2 kills au pistolet', type: 'weapon_specific_kills', weaponType: 'pistol', targetValue: 2, rewardXp: 500, category: 'daily' },
-  { title: 'Maître du Fusil d\'Assaut', description: 'Faire 3 kills au fusil d\'assaut', type: 'weapon_specific_kills', weaponType: 'rifle', targetValue: 3, rewardXp: 550, category: 'daily' },
+  { title: 'Maître du Fusil d\'Assaut', description: 'Faire 3 kills au fusil d\'assaut', type: 'weapon_specific_kills', weaponType: 'assault_rifle', targetValue: 3, rewardXp: 550, category: 'daily' },
+  { title: 'Spécialiste-Mitrailleur', description: 'Faire 3 kills au pistolet mitrailleur', type: 'weapon_specific_kills', weaponType: 'smg', targetValue: 3, rewardXp: 500, category: 'daily' },
   { title: 'Nettoyeur au Pompe', description: 'Faire 2 kills au fusil à pompe', type: 'weapon_specific_kills', weaponType: 'shotgun', targetValue: 2, rewardXp: 450, category: 'daily' },
 ];
 

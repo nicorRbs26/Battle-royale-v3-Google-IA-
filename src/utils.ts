@@ -1,4 +1,4 @@
-import { Weapon, WeaponType, LootItem, ArenaType, EnvironmentalTile, ArenaConfig, AICustomTheme } from './types';
+import { Weapon, WeaponType, WeaponAccessory, LootItem, ArenaType, EnvironmentalTile, ArenaConfig, AICustomTheme } from './types';
 
 export const MAP_SIZE = 2500; // Taille de la carte 2500x2500
 export const STREAM_CHUNK_SIZE = 500; // Découpage en grilles 500x500 pour le streaming de carte
@@ -137,7 +137,7 @@ export const CUSTOM_WEAPONS: WeaponDef[] = [
   },
   {
     nom: 'Mitraillette Légère',
-    type: 'rifle',
+    type: 'smg',
     damage: 14,
     fireRate: 83, // 1000 / 12.0
     clipSize: 30,
@@ -148,7 +148,7 @@ export const CUSTOM_WEAPONS: WeaponDef[] = [
   },
   {
     nom: 'SMG Compact',
-    type: 'rifle',
+    type: 'smg',
     damage: 16,
     fireRate: 91, // 1000 / 11.0
     clipSize: 35,
@@ -158,8 +158,30 @@ export const CUSTOM_WEAPONS: WeaponDef[] = [
     range: 480
   },
   {
+    nom: 'Pistolet-Mitrailleur de Terrain',
+    type: 'smg',
+    damage: 10,
+    fireRate: 80, // 1000 / 12.5
+    clipSize: 40,
+    rarity: 'common',
+    spread: 0.15,
+    bulletSpeed: 13,
+    range: 300
+  },
+  {
+    nom: 'MP7 Cybernétique',
+    type: 'smg',
+    damage: 13,
+    fireRate: 70, // 1000 / 14.3
+    clipSize: 40,
+    rarity: 'epic',
+    spread: 0.1,
+    bulletSpeed: 15,
+    range: 350
+  },
+  {
     nom: 'Fusil d\'Assaut Standard',
-    type: 'rifle',
+    type: 'assault_rifle',
     damage: 24,
     fireRate: 154, // 1000 / 6.5
     clipSize: 30,
@@ -170,7 +192,7 @@ export const CUSTOM_WEAPONS: WeaponDef[] = [
   },
   {
     nom: 'Fusil d\'Assaut Tactique',
-    type: 'rifle',
+    type: 'assault_rifle',
     damage: 28,
     fireRate: 143, // 1000 / 7.0
     clipSize: 30,
@@ -225,7 +247,7 @@ export const CUSTOM_WEAPONS: WeaponDef[] = [
   },
   {
     nom: 'Mitrailleuse Lourde',
-    type: 'rifle',
+    type: 'assault_rifle',
     damage: 22,
     fireRate: 118, // 1000 / 8.5
     clipSize: 100,
@@ -236,7 +258,7 @@ export const CUSTOM_WEAPONS: WeaponDef[] = [
   },
   {
     nom: 'Fusil Laser Cybernétique',
-    type: 'rifle',
+    type: 'assault_rifle',
     damage: 35,
     fireRate: 200, // 1000 / 5.0
     clipSize: 25,
@@ -302,6 +324,16 @@ export const WEAPON_TYPES_CONFIG: Record<WeaponType, { name: string; fireRate: n
     spread: 0.05,
     bulletType: 'bullet',
   },
+  smg: {
+    name: 'Pistolet-Mitrailleur MP7',
+    fireRate: 100,
+    clipSize: 30,
+    damage: 12,
+    bulletSpeed: 14,
+    range: 350,
+    spread: 0.12,
+    bulletType: 'bullet',
+  },
   shotgun: {
     name: 'Fusil à Pompe Cal.12',
     fireRate: 850,
@@ -312,7 +344,7 @@ export const WEAPON_TYPES_CONFIG: Record<WeaponType, { name: string; fireRate: n
     spread: 0.22,
     bulletType: 'bullet',
   },
-  rifle: {
+  assault_rifle: {
     name: 'Fusil d\'Assaut AR-15',
     fireRate: 140,
     clipSize: 30,
@@ -404,19 +436,44 @@ export function generateWeapon(type: WeaponType, rarity: Weapon['rarity'] = 'com
 
   const namePrefix = rarity === 'legendary' ? '🔥 ' : rarity === 'epic' ? '💎 ' : rarity === 'rare' ? '⭐ ' : '';
 
+  // Generate random accessories
+  const accessories: WeaponAccessory[] = [];
+  if (rarity === 'rare' && Math.random() > 0.7) {
+    accessories.push('laser_sight');
+  } else if (rarity === 'epic') {
+    if (Math.random() > 0.5) accessories.push('laser_sight');
+    if (Math.random() > 0.5) accessories.push('scope_x2');
+  } else if (rarity === 'legendary') {
+    accessories.push('suppressor', 'scope_x2', 'extended_mag', 'laser_sight');
+  }
+
+  // Appliquer les effets des accessoires
+  let finalDamage = Math.round(selected.damage * dmgMult);
+  let finalSpread = selected.spread * spreadMult;
+  let finalClipSize = selected.clipSize;
+
+  if (accessories.includes('suppressor')) {
+    finalDamage = Math.round(finalDamage * 0.9); // Moins de dégâts
+    finalSpread = finalSpread * 0.8; // Plus précis
+  }
+  if (accessories.includes('extended_mag')) {
+    finalClipSize = Math.round(finalClipSize * 1.5); // Plus de munitions
+  }
+
   return {
-    type,
+    type: selected.type,
     name: namePrefix + selected.nom + ` (${rarity.charAt(0).toUpperCase() + rarity.slice(1)})`,
-    damage: Math.round(selected.damage * dmgMult),
+    damage: finalDamage,
     fireRate: selected.fireRate,
-    maxAmmo: selected.clipSize * 4,
-    clipSize: selected.clipSize,
-    currentClip: selected.clipSize,
-    reserveAmmo: selected.clipSize * 2,
-    spread: selected.spread * spreadMult,
+    maxAmmo: finalClipSize * 4,
+    clipSize: finalClipSize,
+    currentClip: finalClipSize,
+    reserveAmmo: finalClipSize * 2,
+    spread: finalSpread,
     bulletSpeed: selected.bulletSpeed,
     range: selected.range,
     rarity,
+    accessories,
   };
 }
 
@@ -436,7 +493,7 @@ export function generateRandomLoot(x: number, y: number, id: string): LootItem {
     const randW = Math.random();
     if (randW < 0.3) weaponTypeSelected = 'pistol';
     else if (randW < 0.55) weaponTypeSelected = 'shotgun';
-    else if (randW < 0.8) weaponTypeSelected = 'rifle';
+    else if (randW < 0.8) weaponTypeSelected = 'assault_rifle';
     else if (randW < 0.92) weaponTypeSelected = 'sniper';
     else weaponTypeSelected = 'rocket';
 

@@ -67,7 +67,9 @@ export interface ArenaConfig {
   musicMood: string;
 }
 
-export type WeaponType = 'pistol' | 'shotgun' | 'rifle' | 'sniper' | 'rocket';
+export type WeaponType = 'pistol' | 'smg' | 'shotgun' | 'assault_rifle' | 'sniper' | 'rocket';
+
+export type WeaponAccessory = 'suppressor' | 'scope_x2' | 'extended_mag' | 'laser_sight';
 
 export interface Weapon {
   type: WeaponType;
@@ -82,6 +84,7 @@ export interface Weapon {
   bulletSpeed: number;
   range: number;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  accessories?: WeaponAccessory[];
 }
 
 export type LootType = 'weapon' | 'item';
@@ -131,7 +134,8 @@ export interface Character {
   // Visuals
   skinColor: string;
   hatStyle: 'none' | 'cap' | 'crown' | 'helmet' | 'headphones' | 'bandana' | 'ninja' | 'wizard';
-  patternStyle: 'plain' | 'stripes' | 'dots' | 'camo' | 'lightning';
+  accessoryStyle: 'none' | 'backpack' | 'cape' | 'wings' | 'glasses';
+  patternStyle: 'plain' | 'stripes' | 'dots' | 'camo' | 'lightning' | 'checkered' | 'hearts' | 'neon_grid' | 'glitch';
   
   // Realtime expressions
   activeEmote?: string;
@@ -267,6 +271,7 @@ export interface PlayerStats {
   distanceTraveled: number;
   questsCompleted: string[];
   activeQuests: Quest[];
+  ownedItems: string[];
 }
 
 export type QuestType = 'kills' | 'distance' | 'survival' | 'heal' | 'weapon_specific_kills';

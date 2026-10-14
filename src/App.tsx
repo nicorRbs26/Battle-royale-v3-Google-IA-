@@ -11,7 +11,7 @@ import { initAuthSession, loadStatsFromCloud, syncStatsToCloud, logMatchHistoryT
 import { hasFirebase } from './firebase';
 import { generateClientSessionHash, SessionEvent } from './sessionSecurity';
 import { TouchHUDLayout, ElementPosition } from './components/TouchHUDCustomizer';
-import { AIAgentsModal } from './components/AIAgentsModal';
+
 import { DebugNinjaInspector } from './components/DebugNinjaInspector';
 import { PRESET_AI_AGENTS, getCachedImportedAgents, getActiveAgentId } from './googleDriveService';
 import { TacticalWheel } from './components/TacticalWheel';
@@ -82,6 +82,7 @@ const DEFAULT_STATS: PlayerStats = {
   distanceTraveled: 0,
   questsCompleted: [],
   activeQuests: [],
+  ownedItems: [],
 };
 
 const GRID_CELL_SIZE = 125;
@@ -144,6 +145,7 @@ export default function App() {
   const [playerName, setPlayerName] = useState<string>('Survivant_Pro');
   const [skinColor, setSkinColor] = useState<string>('#ef4444');
   const [hatStyle, setHatStyle] = useState<Character['hatStyle']>('cap');
+  const [accessoryStyle, setAccessoryStyle] = useState<Character['accessoryStyle']>('none');
   const [patternStyle, setPatternStyle] = useState<Character['patternStyle']>('plain');
 
   // Stats persisting matching
@@ -151,15 +153,15 @@ export default function App() {
   const [userId, setUserId] = useState<string>('');
 
   // Agents IA & Google Drive Integration
-  const [isAIAgentsModalOpen, setIsAIAgentsModalOpen] = useState<boolean>(false);
-  const [availableAIAgents, setAvailableAIAgents] = useState<AIAgentConfig[]>(() => {
+
+  const [availableAIAgents] = useState<AIAgentConfig[]>(() => {
     const cached = getCachedImportedAgents();
     return [
       ...PRESET_AI_AGENTS,
       ...cached.filter(c => !PRESET_AI_AGENTS.some(p => p.name.toLowerCase() === c.name.toLowerCase()))
     ];
   });
-  const [activeAgent, setActiveAgent] = useState<AIAgentConfig>(() => {
+  const [activeAgent] = useState<AIAgentConfig>(() => {
     const activeId = getActiveAgentId();
     const cached = getCachedImportedAgents();
     const all = [...PRESET_AI_AGENTS, ...cached];
@@ -406,7 +408,7 @@ export default function App() {
   const lastLoggedMoveDistRef = useRef<number>(0);
   
   // vibe: Refs pour le suivi des quêtes durant le match (évite re-renders fréquents)
-  const matchKillsByTypeRef = useRef<Record<WeaponType, number>>({ pistol: 0, shotgun: 0, rifle: 0, sniper: 0, rocket: 0 });
+  const matchKillsByTypeRef = useRef<Record<WeaponType, number>>({ pistol: 0, shotgun: 0, assault_rifle: 0, sniper: 0, rocket: 0 });
   const matchDistanceTraveledRef = useRef<number>(0);
   const matchHealsUsedRef = useRef<number>(0);
 
@@ -718,7 +720,7 @@ export default function App() {
     freeCamPosRef.current = { x: MAP_SIZE / 2, y: MAP_SIZE / 2 };
     
     // vibe: Réinitialiser le suivi des quêtes pour le nouveau match
-    matchKillsByTypeRef.current = { pistol: 0, shotgun: 0, rifle: 0, sniper: 0, rocket: 0 };
+    matchKillsByTypeRef.current = { pistol: 0, shotgun: 0, assault_rifle: 0, sniper: 0, rocket: 0 };
     matchDistanceTraveledRef.current = 0;
     matchHealsUsedRef.current = 0;
     
@@ -896,7 +898,8 @@ export default function App() {
       ammo: {
         pistol: 24,
         shotgun: 6,
-        rifle: 45,
+        assault_rifle: 45,
+        smg: 0,
         sniper: 5,
         rocket: 2,
       },
@@ -909,6 +912,7 @@ export default function App() {
       skinColor,
       hatStyle,
       patternStyle,
+      accessoryStyle: 'none',
       aiState: 'idle',
       lastShootTime: 0,
       lastDecisionTime: 0,
@@ -939,7 +943,7 @@ export default function App() {
         shield: 50,
         weapons: [mateWeapon, null],
         activeWeaponIndex: 0,
-        ammo: { pistol: 100, shotgun: 20, rifle: 90, sniper: 15, rocket: 5 },
+        ammo: { pistol: 100, shotgun: 20, assault_rifle: 90, smg: 0, sniper: 15, rocket: 5 },
         medkits: 1,
         shieldPotions: 1,
         dashCharges: 3,
@@ -949,6 +953,7 @@ export default function App() {
         skinColor: '#3b82f6', // Bleu pour les alliés
         hatStyle: activeAgent.tactics?.specialty === 'debug' ? 'ninja' : 'helmet',
         patternStyle: 'plain',
+        accessoryStyle: 'none',
         aiState: 'search_loot',
         lastShootTime: 0,
         lastDecisionTime: 0,
@@ -987,7 +992,7 @@ export default function App() {
       // Assigner un profil d'agent IA depuis le pool (Drive ou Prédéfinis)
       const assignedAgent = availableAIAgents[k % availableAIAgents.length] || PRESET_AI_AGENTS[0];
       const botW = generateWeapon(
-        assignedAgent.tactics?.preferredWeapon || (Math.random() < 0.4 ? 'pistol' : Math.random() < 0.75 ? 'shotgun' : 'rifle'),
+        assignedAgent.tactics?.preferredWeapon || (Math.random() < 0.4 ? 'pistol' : Math.random() < 0.75 ? 'shotgun' : 'assault_rifle'),
         Math.random() > 0.85 ? 'rare' : 'common'
       );
 
@@ -1013,7 +1018,7 @@ export default function App() {
         shield: Math.random() > botShieldChance ? 25 : 0,
         weapons: [botW, null],
         activeWeaponIndex: 0,
-        ammo: { pistol: 120, shotgun: 25, rifle: 110, sniper: 15, rocket: 4 },
+        ammo: { pistol: 120, shotgun: 25, assault_rifle: 110, smg: 0, sniper: 15, rocket: 4 },
         medkits: Math.random() > 0.70 ? 1 : 0,
         shieldPotions: Math.random() > 0.75 ? 1 : 0,
         dashCharges: 3,
@@ -1023,6 +1028,7 @@ export default function App() {
         skinColor: botColor,
         hatStyle: botHat,
         patternStyle: Math.random() > 0.6 ? 'stripes' : 'plain',
+        accessoryStyle: 'none',
         aiState: 'search_loot',
         lastShootTime: 0,
         lastDecisionTime: 0,
@@ -1846,7 +1852,7 @@ export default function App() {
           if (opener.isPlayer) sounds.playHeal(); // Joue un jingle victorieux allié !
 
           // Générer des armes et items ultra rares autour du coffre pour de rudes batailles de loot
-          const types: WeaponType[] = ['sniper', 'rocket', 'rifle', 'shotgun'];
+          const types: WeaponType[] = ['sniper', 'rocket', 'assault_rifle', 'shotgun'];
           const randType1 = types[Math.floor(Math.random() * types.length)];
           const randType2 = types[Math.floor(Math.random() * types.length)];
           const weapon1 = generateWeapon(randType1, 'legendary');
@@ -3175,6 +3181,7 @@ export default function App() {
         distanceTraveled: (stats.distanceTraveled || 0) + Math.round(matchDistanceTraveledRef.current / 10),
         questsCompleted: stats.questsCompleted || [],
         activeQuests: tempQuests,
+        ownedItems: stats.ownedItems || []
       };
 
       setStats(newStats);
@@ -3461,7 +3468,7 @@ export default function App() {
         screenShakeRef.current = Math.max(screenShakeRef.current, 9);
       } else if (activeW.type === 'sniper') {
         screenShakeRef.current = Math.max(screenShakeRef.current, 7);
-      } else if (activeW.type === 'rifle') {
+      } else if (activeW.type === 'assault_rifle') {
         screenShakeRef.current = Math.max(screenShakeRef.current, 2.5);
       } else if (activeW.type === 'pistol') {
         screenShakeRef.current = Math.max(screenShakeRef.current, 1.0);
@@ -4653,7 +4660,7 @@ export default function App() {
       if (item.type === 'weapon' && item.weaponData) {
         if (item.weaponData.type === 'pistol') shortLabel = '🔫';
         else if (item.weaponData.type === 'shotgun') shortLabel = '⚡ Pompe';
-        else if (item.weaponData.type === 'rifle') shortLabel = '💎 AR';
+        else if (item.weaponData.type === 'assault_rifle') shortLabel = '💎 AR';
         else if (item.weaponData.type === 'sniper') shortLabel = '⭐ Sniper';
         else shortLabel = '🔥 RPG';
       } else {
@@ -5162,6 +5169,37 @@ export default function App() {
         else if (char.hatStyle === 'wizard') hatEmoji = '🧙';
 
         ctx.fillText(hatEmoji, cx, cy - 9);
+      }
+
+      // Rendre les accessoires
+      if (char.accessoryStyle !== 'none') {
+        if (char.accessoryStyle === 'glasses') {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(cx - 6, cy - 3, 4, 2);
+          ctx.fillRect(cx + 2, cy - 3, 4, 2);
+        } else if (char.accessoryStyle === 'backpack') {
+          ctx.fillStyle = '#475569';
+          ctx.fillRect(cx - 8, cy + 6, 16, 12);
+        } else if (char.accessoryStyle === 'cape') {
+          ctx.fillStyle = '#991b1b';
+          ctx.beginPath();
+          ctx.moveTo(cx - 10, cy + 2);
+          ctx.lineTo(cx + 10, cy + 2);
+          ctx.lineTo(cx, cy + 22);
+          ctx.fill();
+        } else if (char.accessoryStyle === 'wings') {
+          ctx.fillStyle = '#f1f5f9';
+          ctx.beginPath();
+          ctx.moveTo(cx - 5, cy + 2);
+          ctx.lineTo(cx - 25, cy - 8);
+          ctx.lineTo(cx - 5, cy + 7);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(cx + 5, cy + 2);
+          ctx.lineTo(cx + 25, cy - 8);
+          ctx.lineTo(cx + 5, cy + 7);
+          ctx.fill();
+        }
       }
 
       // vibe: Health/Shield bars above characters for better status tracking
@@ -6005,6 +6043,8 @@ export default function App() {
             setHatStyle={setHatStyle}
             patternStyle={patternStyle}
             setPatternStyle={setPatternStyle}
+            accessoryStyle={accessoryStyle}
+            setAccessoryStyle={setAccessoryStyle}
             onStartGame={handleStartGame}
             onUpdateStats={(updated) => {
               setStats(updated);
@@ -6021,8 +6061,6 @@ export default function App() {
             onSelectArena={setSelectedArena}
             controlOption={controlOption}
             setControlOption={setControlOption}
-            onOpenAIAgents={() => setIsAIAgentsModalOpen(true)}
-            activeAgent={activeAgent}
           />
         </div>
       )}
@@ -6368,6 +6406,7 @@ export default function App() {
             skinColor={skinColor}
             hatStyle={hatStyle}
             patternStyle={patternStyle}
+            accessoryStyle={accessoryStyle}
             stats={stats}
             activeAgent={activeAgent}
             onRestart={() => setGameState('menu')}
@@ -6393,21 +6432,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* Modal Agents IA & Google Drive */}
-      <AIAgentsModal
-        isOpen={isAIAgentsModalOpen}
-        onClose={() => setIsAIAgentsModalOpen(false)}
-        activeAgent={activeAgent}
-        onSelectAgent={(agent) => setActiveAgent(agent)}
-        onApplyAgentsToMatch={(agents) => {
-          setAvailableAIAgents([
-            ...PRESET_AI_AGENTS,
-            ...agents.filter(c => !PRESET_AI_AGENTS.some(p => p.name.toLowerCase() === c.name.toLowerCase()))
-          ]);
-        }}
-        debugNinjaEnabled={debugNinjaEnabled}
-        onToggleDebugNinja={setDebugNinjaEnabled}
-      />
 
       {/* Inspecteur Temps Réel DebugNinja */}
       {gameState === 'playing' && debugNinjaEnabled && (

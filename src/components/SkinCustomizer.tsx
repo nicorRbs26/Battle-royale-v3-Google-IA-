@@ -1,12 +1,14 @@
 import React from 'react';
 import { Character } from '../types';
-import { isHatLocked, isPatternLocked } from '../progression';
+import { isHatLocked, isPatternLocked, isAccessoryLocked } from '../progression';
 
 interface SkinCustomizerProps {
   skinColor: string;
   setSkinColor: (color: string) => void;
   hatStyle: Character['hatStyle'];
   setHatStyle: (hat: Character['hatStyle']) => void;
+  accessoryStyle: Character['accessoryStyle'];
+  setAccessoryStyle: (acc: Character['accessoryStyle']) => void;
   patternStyle: Character['patternStyle'];
   setPatternStyle: (pat: Character['patternStyle']) => void;
   playerName: string;
@@ -43,6 +45,18 @@ const PATTERNS: { value: Character['patternStyle']; name: string; desc: string }
   { value: 'dots', name: 'Pois Tactiques', desc: 'Un style vintage et droll' },
   { value: 'camo', name: 'Camouflage', desc: 'Idéal pour camper dans les buissons' },
   { value: 'lightning', name: 'Éclairs d\'Aura', desc: 'Brille par ton énergie pure' },
+  { value: 'checkered', name: 'Damiers', desc: 'Un classique indémodable' },
+  { value: 'hearts', name: 'Cœurs', desc: 'Aimez vos adversaires' },
+  { value: 'neon_grid', name: 'Grille Néon', desc: 'Un look futuriste' },
+  { value: 'glitch', name: 'Glitch', desc: 'Bug dans la matrice' },
+];
+
+const ACCESSORIES: { value: Character['accessoryStyle']; name: string; emoji: string }[] = [
+  { value: 'none', name: 'Aucun', emoji: '🚫' },
+  { value: 'backpack', name: 'Sac à dos', emoji: '🎒' },
+  { value: 'cape', name: 'Cape', emoji: '🦸' },
+  { value: 'wings', name: 'Ailes', emoji: '🪽' },
+  { value: 'glasses', name: 'Lunettes', emoji: '🕶️' },
 ];
 
 export default function SkinCustomizer({
@@ -50,6 +64,8 @@ export default function SkinCustomizer({
   setSkinColor,
   hatStyle,
   setHatStyle,
+  accessoryStyle,
+  setAccessoryStyle,
   patternStyle,
   setPatternStyle,
   playerName,
@@ -115,10 +131,16 @@ export default function SkinCustomizer({
               </div>
             </div>
 
-            {/* Chapeau positionné au-dessus en vue de dessus */}
+            {/* Chapeau positionné au-dessus */}
             {hatStyle !== 'none' && (
-              <div className="absolute top-1 z-10 text-4xl animate-bounce" style={{ animationDuration: '3s' }}>
+              <div className="absolute -top-4 z-10 text-3xl animate-bounce" style={{ animationDuration: '3s' }}>
                 {HATS.find(h => h.value === hatStyle)?.emoji}
+              </div>
+            )}
+            {/* Accessoire positionné en bas */}
+            {accessoryStyle !== 'none' && (
+              <div className="absolute -bottom-2 z-10 text-3xl">
+                {ACCESSORIES.find(a => a.value === accessoryStyle)?.emoji}
               </div>
             )}
           </div>
@@ -168,30 +190,30 @@ export default function SkinCustomizer({
 
       {/* Rangée du Bas : Chapeaux et Motifs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 border-t border-slate-800/80 pt-6">
-        {/* Style de Chapeau */}
+        {/* Accessoires */}
         <div>
-          <label className="text-sm font-medium text-slate-400 font-sans block mb-3">Accessoire / Chapeau</label>
+          <label className="text-sm font-medium text-slate-400 font-sans block mb-3">Accessoire Dos / Visage</label>
           <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto pr-1 font-sans">
-            {HATS.map((hat) => {
-              const isLocked = isHatLocked(hat.value, playerLevel);
-              const getLevelReq = hat.value === 'ninja' ? 4 : hat.value === 'headphones' ? 6 : hat.value === 'crown' ? 8 : 1;
+            {ACCESSORIES.map((acc) => {
+              const isLocked = isAccessoryLocked(acc.value, playerLevel);
+              const getLevelReq = acc.value === 'backpack' ? 3 : acc.value === 'cape' ? 6 : acc.value === 'wings' ? 9 : acc.value === 'glasses' ? 2 : 1;
               return (
                 <button
-                  key={hat.value}
+                  key={acc.value}
                   disabled={isLocked}
-                  onClick={() => !isLocked && setHatStyle(hat.value)}
+                  onClick={() => !isLocked && setAccessoryStyle(acc.value)}
                   className={`flex items-center justify-between gap-1 px-3 py-2 rounded-lg border text-left transition-all text-xs font-semibold cursor-pointer ${
                     isLocked
                       ? 'bg-slate-950/20 border-slate-900 text-slate-600 cursor-not-allowed opacity-60'
-                      : hatStyle === hat.value
+                      : accessoryStyle === acc.value
                         ? 'bg-slate-800 text-amber-400 border-amber-500'
                         : 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
                   }`}
-                  title={isLocked ? `Bloqué ! Débloquez au Niveau ${getLevelReq}` : hat.name}
+                  title={isLocked ? `Bloqué ! Débloquez au Niveau ${getLevelReq}` : acc.name}
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <span className="text-base">{hat.emoji}</span>
-                    <span className="truncate">{hat.name}</span>
+                    <span className="text-base">{acc.emoji}</span>
+                    <span className="truncate">{acc.name}</span>
                   </div>
                   {isLocked && <span className="text-[10px] text-red-500 shrink-0 font-mono">🔒 Niv.{getLevelReq}</span>}
                 </button>
@@ -206,7 +228,7 @@ export default function SkinCustomizer({
           <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto pr-1 font-sans">
             {PATTERNS.map((pat) => {
               const isLocked = isPatternLocked(pat.value, playerLevel);
-              const getLevelReq = pat.value === 'camo' ? 5 : pat.value === 'lightning' ? 10 : 1;
+              const getLevelReq = pat.value === 'camo' ? 5 : pat.value === 'lightning' ? 10 : pat.value === 'checkered' ? 3 : pat.value === 'hearts' ? 7 : pat.value === 'neon_grid' ? 12 : pat.value === 'glitch' ? 15 : 1;
               return (
                 <button
                   key={pat.value}

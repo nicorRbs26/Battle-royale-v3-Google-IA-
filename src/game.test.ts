@@ -38,8 +38,8 @@ describe('Game Utilities (utils.ts)', () => {
 
     // test: Multiplicateurs de rareté (Legendary -> 1.5x damage)
     // # test: On vérifie que les dégâts légendaires sont supérieurs aux communs pour le même type
-    const commonDmg = generateWeapon('rifle', 'common').damage;
-    const legendaryDmg = generateWeapon('rifle', 'legendary').damage;
+    const commonDmg = generateWeapon('assault_rifle', 'common').damage;
+    const legendaryDmg = generateWeapon('assault_rifle', 'legendary').damage;
     
     // damage: Math.round(selected.damage * dmgMult)
     // Common mult: 1.0, Legendary mult: 1.5
@@ -137,7 +137,7 @@ describe('Combat & Mechanics Non-Regression (Mechanics Diagnostics)', () => {
   it('should prevent bot weapon lockup by simulating reload cycle', () => {
     const mockWeapon = {
       name: 'Rifle Test',
-      type: 'rifle' as const,
+      type: 'assault_rifle' as const,
       currentClip: 0,
       clipSize: 30,
       fireRate: 150,

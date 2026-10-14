@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { PlayMode, PlayerStats, ArenaType, Difficulty, AIAgentConfig } from '../types';
+import { PlayMode, PlayerStats, ArenaType, Difficulty } from '../types';
 import SkinCustomizer from './SkinCustomizer';
 import TouchHUDCustomizer from './TouchHUDCustomizer';
-import { GodotEngineStudio } from './GodotEngineStudio';
+import GameShop from './GameShop';
+
 import { LEVEL_REWARDS, getXpRequired } from '../progression';
 import { CUSTOM_WEAPONS, toggleNativeFullscreen } from '../utils';
 import { fetchLeaderboards, LeaderboardEntry } from '../firebaseService';
@@ -23,14 +24,14 @@ interface MainMenuProps {
   setHatStyle: (hat: any) => void;
   patternStyle: any;
   setPatternStyle: (pat: any) => void;
+  accessoryStyle: any;
+  setAccessoryStyle: (acc: any) => void;
   onStartGame: () => void;
   onUpdateStats: (newStats: PlayerStats) => void;
   selectedArena: ArenaType | 'random';
   onSelectArena: (arena: ArenaType | 'random') => void;
   controlOption: 'keyboard' | 'gamepad' | 'touch';
   setControlOption: (opt: 'keyboard' | 'gamepad' | 'touch') => void;
-  onOpenAIAgents?: () => void;
-  activeAgent?: AIAgentConfig;
 }
 
 const MODES_CONFIG: { value: PlayMode; label: string; desc: string; icon: string }[] = [
@@ -92,17 +93,17 @@ export default function MainMenu({
   setHatStyle,
   patternStyle,
   setPatternStyle,
+  accessoryStyle,
+  setAccessoryStyle,
   onStartGame,
   onUpdateStats,
   selectedArena,
   onSelectArena,
   controlOption,
   setControlOption,
-  onOpenAIAgents,
-  activeAgent,
 }: MainMenuProps) {
   const [showCustomizer, setShowCustomizer] = useState<boolean>(false);
-  const [activeSegment, setActiveSegment] = useState<'home' | 'progression' | 'weapons' | 'options' | 'touch-customizer' | 'leaderboards' | 'godot-engine'>('home');
+  const [activeSegment, setActiveSegment] = useState<'home' | 'progression' | 'weapons' | 'options' | 'touch-customizer' | 'leaderboards' | 'shop'>('home');
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [leaderboardSortBy, setLeaderboardSortBy] = useState<'wins' | 'kills' | 'level'>('wins');
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState<boolean>(false);
@@ -243,6 +244,18 @@ export default function MainMenu({
             <span>🏆</span> Classement
           </button>
           <button
+            onClick={() => setActiveSegment('shop')}
+            onTouchStart={() => triggerHaptic('light')}
+            id="tab-shop"
+            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
+              activeSegment === 'shop'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg'
+                : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+            }`}
+          >
+            <span>🛍️</span> Boutique
+          </button>
+          <button
             onClick={() => setActiveSegment('options')}
             onTouchStart={() => triggerHaptic('light')}
             id="tab-options"
@@ -254,32 +267,6 @@ export default function MainMenu({
           >
             <span>⚙️</span> Options
           </button>
-          <button
-            onClick={() => setActiveSegment('godot-engine')}
-            onTouchStart={() => triggerHaptic('light')}
-            id="tab-godot-engine"
-            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
-              activeSegment === 'godot-engine'
-                ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/20'
-                : 'bg-slate-900 text-cyan-400 hover:text-cyan-300 border border-cyan-500/30'
-            }`}
-          >
-            <span>🤖</span> Godot 4.5+ BR Engine V0.1
-          </button>
-          {onOpenAIAgents && (
-            <button
-              onClick={onOpenAIAgents}
-              onTouchStart={() => triggerHaptic('light')}
-              id="tab-ai-agents"
-              className="px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/50 shadow-lg hover:shadow-amber-500/20 active:scale-95"
-              title="Gérer les agents IA et synchroniser avec Google Drive"
-            >
-              <span>🥷</span> Agents IA & Drive
-              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
-                {activeAgent?.name || 'DebugNinja'}
-              </span>
-            </button>
-          )}
         </div>
       )}
 
@@ -292,6 +279,8 @@ export default function MainMenu({
             setHatStyle={setHatStyle}
             patternStyle={patternStyle}
             setPatternStyle={setPatternStyle}
+            accessoryStyle={accessoryStyle}
+            setAccessoryStyle={setAccessoryStyle}
             playerName={playerName}
             setPlayerName={setPlayerName}
             onConfirm={() => setShowCustomizer(false)}
@@ -465,7 +454,7 @@ export default function MainMenu({
                       <span className="text-xl">
                         {weapon.type === 'pistol' && '🔫'}
                         {weapon.type === 'shotgun' && '💥'}
-                        {weapon.type === 'rifle' && '☄️'}
+                        {weapon.type === 'assault_rifle' && '☄️'}
                         {weapon.type === 'sniper' && '🎯'}
                         {weapon.type === 'rocket' && '🚀'}
                       </span>
@@ -800,10 +789,6 @@ export default function MainMenu({
             </div>
           )}
         </div>
-      ) : activeSegment === 'godot-engine' ? (
-        <div className="animate-fade-in-up w-full" style={{ touchAction: 'pan-y' }}>
-          <GodotEngineStudio />
-        </div>
       ) : activeSegment === 'touch-customizer' ? (
         <div className="animate-fade-in-up" style={{ touchAction: 'pan-y' }}>
           <TouchHUDCustomizer
@@ -830,6 +815,21 @@ export default function MainMenu({
             }}
             onClose={() => {
               setActiveSegment('options');
+            }}
+          />
+        </div>
+      ) : activeSegment === 'shop' ? (
+        <div className="animate-fade-in-up flex justify-center p-4">
+          <GameShop 
+            currentXP={playerXp}
+            ownedItems={stats.ownedItems || []}
+            onPurchase={(item) => {
+              const newStats = {
+                ...stats,
+                xp: (stats.xp || 0) - item.price,
+                ownedItems: [...(stats.ownedItems || []), item.id]
+              };
+              onUpdateStats(newStats);
             }}
           />
         </div>

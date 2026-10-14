@@ -1,33 +1,30 @@
-# Implementation Plan - Amélioration des graphiques (Textures et Environnement)
+# Economic Design Plan: Single-Player Progression
 
-## User Request
-- **Améliorer les graphiques (textures, environnement)**
-- **Niveau de détails pour les textures du sol et des décors** : Sol texturé procédural riche et détails dynamiques
+## 1. Design Principles
+- **Goal**: Create a sustainable, rewarding loop that supports long-term progression without premium currencies.
+- **Economy Type**: Closed-loop (gameplay-driven).
+- **Core Strategy**: Steady growth balanced by increasing costs to prevent runaway inflation.
 
----
+## 2. Economic Variables
+- **Soft Currency (Gold)**: Primary means of purchasing upgrades.
+- **Formulas**:
+  - **Cost (Tier `n`)**: `BaseCost * (1.5 ^ (n - 1))` (Exponential cost scaling).
+  - **Reward (Level `n`)**: `BaseReward + (n * 50)` (Linear reward growth).
 
-## Proposed Changes
+## 3. Gameplay Loops
+- **Sources**:
+  - Daily Missions (Reliable income).
+  - Core Gameplay Tasks (Skill-based, variable rewards).
+- **Sinks**:
+  - Gear/Character Upgrades.
+  - Resource Converters (Materials to Gold).
 
-### 1. Amélioration des Textures du Sol et Procédurales (`src/utils.ts` & `src/App.tsx`)
-- Enrichir le rendu des tuiles de sol (`EnvironmentalTile`, `ArenaType`) avec des motifs procéduraux riches selon l'arène (forêt militaire avec feuillage et mousses, cyberpunk avec dalles lumineuses et circuits imprimés, désert avec dunes de sable texturées, île volcanique avec fissures de lave).
-- Ajouter des textures de grille fine et de micro-détails (gravillons, débris, fissures) calculées par motif procédural sans perte de performance.
+## 4. 30-Day Simulation Projection
+- **Phase 1 (Days 1-7)**: Fast progress, low cost, focus on unlocking basic capabilities.
+- **Phase 2 (Days 8-20)**: Steady progression, cost curves begin to bite, focus on efficiency.
+- **Phase 3 (Days 21-30)**: Long-term optimization, high costs, focus on mastering systems.
 
-### 2. Détails Environnementaux Dynamiques (`src/App.tsx`)
-- **Particules environnementales dynamiques** : poussière flottante, spores lumineuses, feuilles/cendre en suspension selon l'arène.
-- **Effets visuels au sol** : empreintes de pas ou traces de dash, ondulations d'eau/boue sous les pas, éclats d'impacts de balles persistants, cratères de grenades texturés.
-- **Éléments de décor interactifs et animés** : arbres/buissons qui s'écartent ou bougent lors du passage ou des explosions, torches/phares lumineux oscillants, effets de distorsion thermique ou de brouillard volumétrique.
-
-### 3. Polish Visuel et Éclairage (`src/App.tsx` & Rendu Canvas)
-- Ajout d'ombres portées dynamiques douces sous les personnages, véhicules et structures.
-- Effets de post-processing 2D (vignettage atmosphérique, lueur néon "bloom" simulée pour les éléments lumineux, flashs de tirs illuminant le sol environnant).
-
----
-
-## Verification Plan
-
-### Automated Tests
-- Exécuter `compile_applet` pour valider l'absence d'erreurs de compilation TypeScript / JSX.
-- Exécuter `lint_applet` pour vérifier la propreté du code.
-
-### Manual Verification
-- Lancer une partie en mode solo / arène aléatoire et vérifier la richesse visuelle des textures de sol et des effets dynamiques d'environnement.
+## 5. Next Steps
+1. Finalize the `BaseCost` and `BaseReward` parameters based on target time-to-progression.
+2. Develop the Excel/TypeScript simulator for these parameters.
+3. Integrate into game logic.

@@ -40,7 +40,7 @@ export const PRESET_AI_AGENTS: AIAgentConfig[] = [
       aggression: 0.65,
       accuracy: 0.9,
       reactionSpeed: 140,
-      preferredWeapon: 'rifle',
+      preferredWeapon: 'assault_rifle',
       specialty: 'debug',
     },
   },
@@ -58,7 +58,7 @@ export const PRESET_AI_AGENTS: AIAgentConfig[] = [
       aggression: 0.45,
       accuracy: 0.85,
       reactionSpeed: 160,
-      preferredWeapon: 'rifle',
+      preferredWeapon: 'assault_rifle',
       specialty: 'tactician',
     },
   },
@@ -150,7 +150,7 @@ export function parseAIAgentJSON(raw: any, fileName?: string): AIAgentConfig | n
   const created = typeof raw.created === 'number' ? raw.created : Date.now();
 
   // Deduce tactical combat profile from tags and instructions
-  let preferredWeapon: WeaponType = 'rifle';
+  let preferredWeapon: WeaponType = 'assault_rifle';
   let specialty: AIAgentConfig['tactics']['specialty'] = 'tactician';
   let aggression = 0.6;
   let accuracy = 0.8;
@@ -163,7 +163,7 @@ export function parseAIAgentJSON(raw: any, fileName?: string): AIAgentConfig | n
     accuracy = 0.92;
     aggression = 0.65;
     reactionSpeed = 130;
-    preferredWeapon = 'rifle';
+    preferredWeapon = 'assault_rifle';
   } else if (fullText.includes('sniper') || fullText.includes('précision') || fullText.includes('distance')) {
     specialty = 'sniper';
     accuracy = 0.96;
