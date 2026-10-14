@@ -7,6 +7,7 @@ import { LEVEL_REWARDS, getXpRequired } from '../progression';
 import { CUSTOM_WEAPONS, toggleNativeFullscreen } from '../utils';
 import { fetchLeaderboards, LeaderboardEntry } from '../firebaseService';
 import { hasFirebase, auth } from '../firebase';
+import { triggerHaptic } from '../utils/haptics';
 
 interface MainMenuProps {
   stats: PlayerStats;
@@ -162,12 +163,13 @@ export default function MainMenu({
   };
 
   return (
-    <div id="main-menu-root" className="max-w-4xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-8 relative overflow-x-hidden">
+    <div id="main-menu-root" className="max-w-4xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-8 relative overflow-x-hidden" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
       
       {/* BOUTON PLEIN ÉCRAN */}
       <div className="absolute top-4 right-4 z-20">
         <button
           onClick={toggleNativeFullscreen}
+          onTouchStart={() => triggerHaptic('click')}
           className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-amber-500 text-amber-400 text-xs font-bold shadow-lg flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
           title="Activer/Désactiver le mode plein écran"
         >
@@ -191,8 +193,9 @@ export default function MainMenu({
         <div className="flex flex-wrap justify-center gap-3 mb-8 font-sans">
           <button
             onClick={() => setActiveSegment('home')}
+            onTouchStart={() => triggerHaptic('light')}
             id="tab-arena"
-            className={`px-5 py-2 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
               activeSegment === 'home'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg'
                 : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -202,8 +205,9 @@ export default function MainMenu({
           </button>
           <button
             onClick={() => setActiveSegment('progression')}
+            onTouchStart={() => triggerHaptic('light')}
             id="tab-progression"
-            className={`px-5 py-2 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 relative ${
+            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 relative ${
               activeSegment === 'progression'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg'
                 : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -216,8 +220,9 @@ export default function MainMenu({
           </button>
           <button
             onClick={() => setActiveSegment('weapons')}
+            onTouchStart={() => triggerHaptic('light')}
             id="tab-weapons"
-            className={`px-5 py-2 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
               activeSegment === 'weapons'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg'
                 : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -227,8 +232,9 @@ export default function MainMenu({
           </button>
           <button
             onClick={() => setActiveSegment('leaderboards')}
+            onTouchStart={() => triggerHaptic('light')}
             id="tab-leaderboards"
-            className={`px-5 py-2 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
               activeSegment === 'leaderboards'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg'
                 : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -238,8 +244,9 @@ export default function MainMenu({
           </button>
           <button
             onClick={() => setActiveSegment('options')}
+            onTouchStart={() => triggerHaptic('light')}
             id="tab-options"
-            className={`px-5 py-2 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
               activeSegment === 'options'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg'
                 : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -249,8 +256,9 @@ export default function MainMenu({
           </button>
           <button
             onClick={() => setActiveSegment('godot-engine')}
+            onTouchStart={() => triggerHaptic('light')}
             id="tab-godot-engine"
-            className={`px-5 py-2 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 ${
               activeSegment === 'godot-engine'
                 ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 text-white shadow-lg shadow-cyan-500/20'
                 : 'bg-slate-900 text-cyan-400 hover:text-cyan-300 border border-cyan-500/30'
@@ -261,8 +269,9 @@ export default function MainMenu({
           {onOpenAIAgents && (
             <button
               onClick={onOpenAIAgents}
+              onTouchStart={() => triggerHaptic('light')}
               id="tab-ai-agents"
-              className="px-5 py-2 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/50 shadow-lg hover:shadow-amber-500/20 active:scale-95"
+              className="px-5 py-3 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all cursor-pointer flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/50 shadow-lg hover:shadow-amber-500/20 active:scale-95"
               title="Gérer les agents IA et synchroniser avec Google Drive"
             >
               <span>🥷</span> Agents IA & Drive
@@ -290,14 +299,15 @@ export default function MainMenu({
           />
           <button
             onClick={() => setShowCustomizer(false)}
-            className="mt-4 text-xs font-mono text-slate-500 hover:text-slate-300 block mx-auto underline cursor-pointer"
+            onTouchStart={() => triggerHaptic('light')}
+            className="mt-4 text-xs font-mono text-slate-500 hover:text-slate-300 block mx-auto underline cursor-pointer p-2"
           >
             ← Retourner sans enregistrer
           </button>
         </div>
       ) : activeSegment === 'progression' ? (
         /* VUE PROGRESSION ET COMPENSE DE NIVEAU */
-        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left">
+        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
           
           {/* Header de Progression */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center border-b border-slate-800 pb-8 mb-8">
@@ -352,7 +362,7 @@ export default function MainMenu({
                 return (
                   <div
                     key={`${reward.level}-${reward.id}`}
-                    className={`border rounded-2xl p-4 flex gap-4 transition-all ${
+                    className={`border rounded-2xl p-6 flex gap-4 transition-all ${
                       isEquipped
                         ? 'border-amber-500 bg-slate-900 shadow-lg shadow-amber-500/5'
                         : isUnlocked
@@ -382,7 +392,7 @@ export default function MainMenu({
                       {/* Actions */}
                       <div className="mt-3.5 flex justify-end">
                         {!isUnlocked ? (
-                          <span className="text-[10px] font-mono text-amber-500/50 bg-amber-500/5 px-2.5 py-1 rounded-lg border border-amber-500/15">
+                          <span className="text-[10px] font-mono text-amber-500/50 bg-amber-500/5 px-2.5 py-1.5 rounded-lg border border-amber-500/15">
                             Bloqué • Niv. requis {reward.level}
                           </span>
                         ) : reward.type === 'hat' || reward.type === 'pattern' ? (
@@ -392,7 +402,8 @@ export default function MainMenu({
                         ) : (
                           <button
                             onClick={() => handleEquipReward(reward.type as 'weapon_effect' | 'emote', reward.id)}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold font-sans transition-all cursor-pointer ${
+                            onTouchStart={() => triggerHaptic('click')}
+                            className={`px-5 py-2.5 rounded-xl text-xs font-bold font-sans transition-all cursor-pointer ${
                               isEquipped
                                 ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
                                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-slate-100 border border-slate-700'
@@ -411,7 +422,7 @@ export default function MainMenu({
         </div>
       ) : activeSegment === 'weapons' ? (
         /* VUE ARSENAL DES 15 ARMES */
-        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left">
+        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
           <div className="border-b border-slate-800 pb-6 mb-6">
             <h3 className="text-2xl font-black text-slate-200 tracking-tight flex items-center gap-2">
               <span>🔫</span> Arsenal Officiel & Spécifications ({CUSTOM_WEAPONS.length} Armes)
@@ -444,7 +455,7 @@ export default function MainMenu({
                 <div
                   key={idx}
                   id={`weapon-def-card-${idx}`}
-                  className={`border rounded-2xl p-4 flex flex-col justify-between transition-all hover:border-slate-700 ${rarityColors[weapon.rarity]}`}
+                  className={`border rounded-2xl p-6 flex flex-col justify-between transition-all hover:border-slate-700 ${rarityColors[weapon.rarity]}`}
                 >
                   <div>
                     <div className="flex justify-between items-start gap-2">
@@ -463,15 +474,15 @@ export default function MainMenu({
                     <h4 className="text-base font-black text-slate-200 mt-1">{weapon.nom}</h4>
                     
                     <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-mono">
-                      <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-950">
+                      <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-950">
                         <span className="text-[9px] text-slate-500 block">Dégâts</span>
                         <span className="font-bold text-red-500 mt-0.5 block">{weapon.damage} HP</span>
                       </div>
-                      <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-950">
+                      <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-950">
                         <span className="text-[9px] text-slate-500 block">Cadence</span>
                         <span className="font-bold text-sky-400 mt-0.5 block">{tps}/s</span>
                       </div>
-                      <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-950">
+                      <div className="bg-slate-950/50 p-3 rounded-xl border border-slate-950">
                         <span className="text-[9px] text-slate-500 block">Chargeur</span>
                         <span className="font-bold text-amber-500 mt-0.5 block">{weapon.clipSize}</span>
                       </div>
@@ -488,7 +499,7 @@ export default function MainMenu({
           </div>
         </div>
       ) : activeSegment === 'options' ? (
-        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left">
+        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
           <div className="border-b border-slate-800 pb-6 mb-6">
             <h3 className="text-2xl font-black text-slate-200 tracking-tight flex items-center gap-2">
               <span>⚙️</span> Choix du Mode de Contrôles
@@ -505,6 +516,7 @@ export default function MainMenu({
                 setControlOption('keyboard');
                 localStorage.setItem('br_control_option', 'keyboard');
               }}
+              onTouchStart={() => triggerHaptic('light')}
               className={`p-6 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-3 ${
                 controlOption === 'keyboard'
                   ? 'border-amber-500 bg-slate-900 ring-4 ring-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
@@ -531,6 +543,7 @@ export default function MainMenu({
                 setControlOption('gamepad');
                 localStorage.setItem('br_control_option', 'gamepad');
               }}
+              onTouchStart={() => triggerHaptic('light')}
               className={`p-6 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-3 ${
                 controlOption === 'gamepad'
                   ? 'border-amber-500 bg-slate-900 ring-4 ring-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
@@ -557,6 +570,7 @@ export default function MainMenu({
                 setControlOption('touch');
                 localStorage.setItem('br_control_option', 'touch');
               }}
+              onTouchStart={() => triggerHaptic('light')}
               className={`p-6 rounded-2xl border-2 transition-all cursor-pointer relative flex flex-col gap-3 ${
                 controlOption === 'touch'
                   ? 'border-amber-500 bg-slate-900 ring-4 ring-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
@@ -580,7 +594,8 @@ export default function MainMenu({
                       e.stopPropagation();
                       setActiveSegment('touch-customizer');
                     }}
-                    className="mt-3.5 w-full bg-slate-800 hover:bg-slate-700 hover:text-amber-400 text-amber-500 border border-amber-500/20 hover:border-amber-500/50 font-sans font-black py-2.5 px-3.5 rounded-xl text-[11px] transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                    onTouchStart={() => triggerHaptic('light')}
+                    className="mt-3.5 w-full bg-slate-800 hover:bg-slate-700 hover:text-amber-400 text-amber-500 border border-amber-500/20 hover:border-amber-500/50 font-sans font-black py-3 px-4 rounded-xl text-[11px] transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
                   >
                     ⚙️ PERSONNALISER LA DISPOSITION
                   </button>
@@ -590,7 +605,7 @@ export default function MainMenu({
           </div>
 
           {/* Guide visuel */}
-          <div className="bg-slate-950/50 border border-slate-800/80 p-4 rounded-2xl font-sans mb-6">
+          <div className="bg-slate-950/50 border border-slate-800/80 p-5 rounded-2xl font-sans mb-6">
             <h4 className="text-xs font-mono font-bold text-amber-500 uppercase tracking-widest mb-2.5">
               💡 Schéma de pilotage sélectionné
             </h4>
@@ -624,6 +639,7 @@ export default function MainMenu({
           <div className="flex justify-end gap-3 font-sans">
             <button
               onClick={() => setActiveSegment('home')}
+              onTouchStart={() => triggerHaptic('light')}
               className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs md:text-sm px-6 py-3 rounded-xl transition-all uppercase cursor-pointer"
             >
               Confirmer et Retourner
@@ -632,7 +648,7 @@ export default function MainMenu({
         </div>
       ) : activeSegment === 'leaderboards' ? (
         /* VUE CLASSEMENT EN LIGNE (FIREBASE) */
-        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left">
+        <div className="animate-fade-in-up bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl font-sans text-left" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
           <div className="border-b border-slate-800 pb-5 mb-6">
             <h3 className="text-2xl font-black text-slate-100 tracking-tight flex items-center gap-2">
               <span>🏆</span> Classement Global en Ligne
@@ -656,6 +672,7 @@ export default function MainMenu({
               </p>
               <button
                 onClick={() => setActiveSegment('home')}
+                onTouchStart={() => triggerHaptic('light')}
                 className="mt-6 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold font-mono px-5 py-2.5 rounded-xl cursor-pointer"
               >
                 Retourner à l'accueil
@@ -671,7 +688,8 @@ export default function MainMenu({
                     <button
                       key={sortByOption}
                       onClick={() => setLeaderboardSortBy(sortByOption)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer ${
+                      onTouchStart={() => triggerHaptic('light')}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide transition-all cursor-pointer ${
                         leaderboardSortBy === sortByOption
                           ? 'bg-amber-500 text-slate-950 shadow'
                           : 'bg-slate-800 text-slate-400 hover:text-slate-200'
@@ -689,7 +707,7 @@ export default function MainMenu({
                   <span className="text-xs text-slate-400 font-mono uppercase tracking-widest mt-4">Chargement du Panthéon...</span>
                 </div>
               ) : leaderboardData.length === 0 ? (
-                <div className="bg-slate-950/30 p-12 rounded-2xl text-center border border-slate-800/30 font-mono text-slate-500 text-xs text-slate-400">
+                <div className="bg-slate-950/30 p-12 rounded-2xl text-center border border-slate-800/30 font-mono text-slate-400 text-xs">
                   Aucun score enregistré pour l'instant. Soyez le premier !
                 </div>
               ) : (
@@ -760,6 +778,7 @@ export default function MainMenu({
               <div className="flex justify-end gap-3 font-sans mt-6">
                 <button
                   onClick={() => setActiveSegment('home')}
+                  onTouchStart={() => triggerHaptic('light')}
                   className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs md:text-sm px-5 py-3 rounded-xl border border-slate-700 cursor-pointer"
                 >
                   Fermer
@@ -772,6 +791,7 @@ export default function MainMenu({
                       setIsLoadingLeaderboard(false);
                     });
                   }}
+                  onTouchStart={() => triggerHaptic('light')}
                   className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs md:text-sm px-6 py-3 rounded-xl transition-all uppercase cursor-pointer"
                 >
                   Rafraîchir 🔄
@@ -781,11 +801,11 @@ export default function MainMenu({
           )}
         </div>
       ) : activeSegment === 'godot-engine' ? (
-        <div className="animate-fade-in-up w-full">
+        <div className="animate-fade-in-up w-full" style={{ touchAction: 'pan-y' }}>
           <GodotEngineStudio />
         </div>
       ) : activeSegment === 'touch-customizer' ? (
-        <div className="animate-fade-in-up">
+        <div className="animate-fade-in-up" style={{ touchAction: 'pan-y' }}>
           <TouchHUDCustomizer
             initialLayout={(() => {
               const saved = localStorage.getItem('br_touch_hud_layout');
@@ -805,7 +825,6 @@ export default function MainMenu({
             })()}
             onSave={(newLayout) => {
               localStorage.setItem('br_touch_hud_layout', JSON.stringify(newLayout));
-              // Save a custom event to notify App state of change if live update is needed
               window.dispatchEvent(new Event('br_touch_layout_updated'));
               setActiveSegment('options');
             }}
@@ -815,13 +834,13 @@ export default function MainMenu({
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8" style={{ touchAction: 'pan-y' }}>
           
           {/* COLONNE GAUCHE : Lanceur & Choix de Mode */}
           <div className="md:col-span-2 flex flex-col gap-6">
             
             {/* Pseudo et Skin QuickView */}
-            <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-xl">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-between shadow-xl">
               <div className="flex gap-4 items-center">
                 <div 
                   className="w-12 h-12 rounded-full border-2 border-slate-950 flex items-center justify-center relative shadow-lg"
@@ -841,7 +860,8 @@ export default function MainMenu({
               </div>
               <button
                 onClick={() => setShowCustomizer(true)}
-                className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 border border-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all cursor-pointer"
+                onTouchStart={() => triggerHaptic('light')}
+                className="bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 border border-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs transition-all cursor-pointer"
               >
                 Personnaliser 🎨
               </button>
@@ -852,14 +872,15 @@ export default function MainMenu({
               <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest font-bold flex items-center gap-1.5">
                 🏟️ Moteur d'Arènes Procédurales
               </h2>
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-md flex flex-col gap-3">
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-md flex flex-col gap-3">
                 <p className="text-xs text-slate-400 font-sans leading-relaxed">
                   Le moteur génère en temps réel des architectures, des couverts défensifs tactiques et des zones interactives uniques à chaque lancement de partie.
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                   <button
                     onClick={() => onSelectArena('random')}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all text-center cursor-pointer ${
                       selectedArena === 'random'
                         ? 'border-amber-400 bg-amber-500/10 shadow-lg text-amber-400 font-bold'
                         : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-400'
@@ -871,7 +892,8 @@ export default function MainMenu({
 
                   <button
                     onClick={() => onSelectArena('military_forest')}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all text-center cursor-pointer ${
                       selectedArena === 'military_forest'
                         ? 'border-emerald-500 bg-emerald-500/10 shadow-lg text-emerald-400 font-bold'
                         : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-400'
@@ -883,7 +905,8 @@ export default function MainMenu({
 
                   <button
                     onClick={() => onSelectArena('industrial')}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all text-center cursor-pointer ${
                       selectedArena === 'industrial'
                         ? 'border-sky-500 bg-sky-500/10 shadow-lg text-sky-400 font-bold'
                         : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-400'
@@ -895,7 +918,8 @@ export default function MainMenu({
 
                   <button
                     onClick={() => onSelectArena('lava_ruins')}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all text-center cursor-pointer ${
                       selectedArena === 'lava_ruins'
                         ? 'border-orange-500 bg-orange-500/10 shadow-lg text-orange-400 font-bold'
                         : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-400'
@@ -907,7 +931,8 @@ export default function MainMenu({
 
                   <button
                     onClick={() => onSelectArena('cyber_neon')}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all text-center cursor-pointer ${
                       selectedArena === 'cyber_neon'
                         ? 'border-fuchsia-500 bg-fuchsia-500/10 shadow-lg text-fuchsia-400 font-bold'
                         : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-400'
@@ -919,7 +944,8 @@ export default function MainMenu({
 
                   <button
                     onClick={() => onSelectArena('skeletal_desert')}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all text-center cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all text-center cursor-pointer ${
                       selectedArena === 'skeletal_desert'
                         ? 'border-amber-600 bg-amber-600/10 shadow-lg text-amber-500 font-bold'
                         : 'border-slate-800 bg-slate-950/40 hover:border-slate-700 text-slate-400'
@@ -931,7 +957,7 @@ export default function MainMenu({
                 </div>
 
                 {/* Description de l'arène sélectionnée */}
-                <div className="bg-slate-950/60 border border-slate-800/80 p-3 rounded-xl text-left">
+                <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl text-left">
                   <div className="flex items-center gap-1.5 mb-1 text-slate-200">
                     <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-500">
                       {selectedArena === 'random' ? '🎲 Sélection Aléatoire Activée' : '📍 ' + ARENA_CONFIGS_DESC[selectedArena].name}
@@ -954,7 +980,8 @@ export default function MainMenu({
                   <button
                     key={mode.value}
                     onClick={() => setSelectedMode(mode.value)}
-                    className={`flex items-start gap-4 p-4 rounded-2xl border-2 text-left transition-all relative cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex items-start gap-4 p-6 rounded-2xl border-2 text-left transition-all relative cursor-pointer ${
                       selectedMode === mode.value
                         ? 'border-amber-500 bg-slate-900 ring-4 ring-amber-500/10'
                         : 'border-slate-800 hover:border-slate-700 bg-slate-900/40'
@@ -966,7 +993,7 @@ export default function MainMenu({
                       <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">{mode.desc}</p>
                     </div>
                     {selectedMode === mode.value && (
-                      <span className="text-amber-500 font-black text-sm absolute top-3 right-4">✓ SÉLECTIONNÉ</span>
+                      <span className="text-amber-500 font-black text-sm absolute top-4 right-4">✓ SÉLECTIONNÉ</span>
                     )}
                   </button>
                 ))}
@@ -976,20 +1003,21 @@ export default function MainMenu({
             {/* Choix de la Difficulté */}
             <div className="flex flex-col gap-3">
               <h2 className="text-xs font-mono text-slate-400 uppercase tracking-widest font-bold">Difficulté des Bots</h2>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {DIFFICULTY_CONFIG.map((difficulty) => (
                   <button
                     key={difficulty.value}
                     onClick={() => setSelectedDifficulty(difficulty.value)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 text-center transition-all relative cursor-pointer ${
+                    onTouchStart={() => triggerHaptic('light')}
+                    className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 text-center transition-all relative cursor-pointer ${
                       selectedDifficulty === difficulty.value
                         ? 'border-amber-500 bg-slate-900 ring-4 ring-amber-500/10'
                         : 'border-slate-800 hover:border-slate-700 bg-slate-900/40'
                     }`}
                     title={difficulty.desc}
                   >
-                    <span className="text-xl mb-1">{difficulty.icon}</span>
-                    <span className={`text-[10px] uppercase font-black tracking-wider ${selectedDifficulty === difficulty.value ? difficulty.color : 'text-slate-500'}`}>
+                    <span className="text-2xl mb-2">{difficulty.icon}</span>
+                    <span className={`text-xs uppercase font-black tracking-wider ${selectedDifficulty === difficulty.value ? difficulty.color : 'text-slate-500'}`}>
                       {difficulty.label}
                     </span>
                   </button>
@@ -1003,6 +1031,7 @@ export default function MainMenu({
             {/* Bouton de Grand Lancement */}
             <button
               onClick={onStartGame}
+              onTouchStart={() => triggerHaptic('dash')}
               className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black py-4 px-6 rounded-2xl transition-all shadow-xl transform active:scale-95 tracking-widest uppercase text-base flex justify-center items-center gap-2 cursor-pointer mt-2"
             >
               <span>🚀</span> LANCER LA BATAILLE ROYALE !

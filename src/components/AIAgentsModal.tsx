@@ -12,6 +12,7 @@ import {
   parseAIAgentJSON
 } from '../googleDriveService';
 import { auth } from '../firebase';
+import { triggerHaptic } from '../utils/haptics';
 
 interface AIAgentsModalProps {
   isOpen: boolean;
@@ -211,7 +212,7 @@ export const AIAgentsModal: React.FC<AIAgentsModalProps> = ({
         </div>
 
         {/* Contenu principal */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-6 overflow-y-auto flex-1 space-y-6" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
 
           {/* STATUS NOTIFICATION BAR */}
           {syncStatus && (
@@ -229,7 +230,8 @@ export const AIAgentsModal: React.FC<AIAgentsModalProps> = ({
               {syncLogs.length > 0 && (
                 <button 
                   onClick={() => setShowLogs(!showLogs)} 
-                  className="text-[11px] underline text-slate-400 hover:text-white ml-2"
+                  onTouchStart={() => triggerHaptic('light')}
+                  className="text-[11px] underline text-slate-400 hover:text-white ml-2 p-1"
                 >
                   {showLogs ? 'Masquer logs' : 'Voir logs'}
                 </button>
@@ -252,7 +254,7 @@ export const AIAgentsModal: React.FC<AIAgentsModalProps> = ({
                 <p className="text-xs text-slate-400">
                   Sélectionnez l'agent actif. Cet agent fournira des conseils tactiques en temps réel dans le GameHUD et insufflera sa personnalité aux bots de l'arène.
                 </p>
-                <label className="cursor-pointer text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 border border-slate-700">
+                <label className="cursor-pointer text-xs font-bold px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5 border border-slate-700">
                   <span>📥</span> Importer JSON local
                   <input type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
                 </label>
@@ -266,7 +268,8 @@ export const AIAgentsModal: React.FC<AIAgentsModalProps> = ({
                   return (
                     <div 
                       key={agent.id}
-                      className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+                      onTouchStart={() => triggerHaptic('light')}
+                      className={`p-6 rounded-2xl border-2 transition-all flex flex-col justify-between ${
                         isActive 
                           ? 'bg-slate-950/80 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' 
                           : 'bg-slate-950/40 border-slate-800 hover:border-slate-700'
@@ -299,7 +302,8 @@ export const AIAgentsModal: React.FC<AIAgentsModalProps> = ({
 
                           <button
                             onClick={() => handleSelect(agent)}
-                            className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all shrink-0 ${
+                            onTouchStart={() => triggerHaptic('click')}
+                            className={`text-xs px-4 py-2.5 rounded-xl font-bold transition-all shrink-0 cursor-pointer ${
                               isActive 
                                 ? 'bg-amber-500 text-slate-950 shadow-md font-black' 
                                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'

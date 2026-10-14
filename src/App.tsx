@@ -16,6 +16,10 @@ import { DebugNinjaInspector } from './components/DebugNinjaInspector';
 import { PRESET_AI_AGENTS, getCachedImportedAgents, getActiveAgentId } from './googleDriveService';
 import { TacticalWheel } from './components/TacticalWheel';
 import { voiceComms } from './services/voiceComms';
+import { useDeviceMode } from './hooks/useDeviceMode';
+import { MobileTouchControls } from './components/MobileTouchControls';
+import { PCShortcutsModal } from './components/PCShortcutsModal';
+import { PCControlPanel } from './components/PCControlPanel';
 
 
 const DEFAULT_TOUCH_LAYOUT: TouchHUDLayout = {
@@ -100,6 +104,10 @@ export default function App() {
     const isTouch = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
     return isTouch ? 'touch' : 'keyboard';
   });
+
+  const { deviceMode, overrideMode, setModeOverride } = useDeviceMode();
+  const [isPCShortcutsOpen, setIsPCShortcutsOpen] = useState(false);
+  const [isPCControlOpen, setIsPCControlOpen] = useState(false);
 
   // AI Customized Arenas States
   const [aiCustomTheme] = useState<AICustomTheme | null>(null);
@@ -5855,6 +5863,42 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center relative overflow-hidden font-sans select-none antialiased">
       
+      {/* Sélecteur de Version (Mobile / PC) */}
+      <div className="absolute top-3 right-3 z-50 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 px-3 py-1.5 rounded-xl shadow-xl text-xs">
+        <span className="text-slate-400">Mode:</span>
+        <button
+          onClick={() => setModeOverride(deviceMode === 'mobile' ? 'pc' : 'mobile')}
+          className="text-cyan-300 font-bold uppercase hover:underline flex items-center gap-1"
+        >
+          {deviceMode === 'mobile' ? '📱 Mobile' : '💻 PC Web'}
+        </button>
+        <span className="text-slate-600">|</span>
+        <button
+          onClick={() => setModeOverride('auto')}
+          className={`text-[10px] ${overrideMode === 'auto' ? 'text-emerald-400 font-semibold' : 'text-slate-500 hover:text-slate-300'}`}
+          title="Mode automatique basé sur l'appareil"
+        >
+          Auto
+        </button>
+        {deviceMode === 'pc' && (
+          <>
+            <span className="text-slate-600">|</span>
+            <button
+              onClick={() => setIsPCShortcutsOpen(true)}
+              className="text-amber-400 font-medium hover:underline text-[11px]"
+            >
+              Raccourcis
+            </button>
+            <button
+              onClick={() => setIsPCControlOpen(true)}
+              className="text-blue-400 font-medium hover:underline text-[11px]"
+            >
+              Panneau PC
+            </button>
+          </>
+        )}
+      </div>
+
       {/* MENUS FLOTTANTS REACT */}
       {gameState === 'menu' && (
         <div className="w-full flex justify-center py-4 animate-fade-in z-10 overflow-y-auto">
@@ -5968,6 +6012,28 @@ export default function App() {
               debugNinjaEnabled={debugNinjaEnabled}
               onToggleDebugNinja={() => setDebugNinjaEnabled(prev => !prev)}
               onOpenTacticalWheel={() => setIsTacticalWheelOpen(true)}
+            />
+          )}
+
+          {deviceMode === 'mobile' && playerRef.current && !spectatorMode && !isMapEnlarged && (
+            <MobileTouchControls
+              onAction={(action, active) => {
+                if (action === 'jump' && active) {
+                  triggerPlayerReload();
+                } else if (action === 'dash' && active) {
+                  handleHUDDash();
+                } else if (action === 'special' && active) {
+                  setIsTacticalWheelOpen(true);
+                }
+              }}
+              onToggleFullscreen={() => {
+                if (!document.fullscreenElement) {
+                  document.documentElement.requestFullscreen().catch(() => {});
+                } else {
+                  if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                }
+              }}
+              isFullscreen={!!document.fullscreenElement}
             />
           )}
 
@@ -6273,6 +6339,24 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Modals PC */}
+      <PCShortcutsModal
+        isOpen={isPCShortcutsOpen}
+        onClose={() => setIsPCShortcutsOpen(false)}
+      />
+
+      <PCControlPanel
+        isOpen={isPCControlOpen}
+        onClose={() => setIsPCControlOpen(false)}
+        onToggleFullscreen={() => {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+          }
+        }}
+      />
 
     </div>
   );

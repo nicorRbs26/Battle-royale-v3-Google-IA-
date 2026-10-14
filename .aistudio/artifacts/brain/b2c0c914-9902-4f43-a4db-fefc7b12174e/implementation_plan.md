@@ -1,20 +1,26 @@
-# Plan d'implémentation : Amélioration de l'affichage mobile, adaptation à la rotation et plein écran natif
+# Implementation Plan - Haptic Feedback & Mobile Touch Menu Navigation
 
-## Objectifs
-1. **Plein écran natif (Fullscreen API)** : Intégrer un bouton de bascule plein écran intuitif dans le menu principal et le HUD en jeu pour maximiser l'espace d'affichage sur smartphone.
-2. **Adaptation responsive Portrait / Paysage** :
-   - Détection dynamique de l'orientation de l'écran (`window.matchMedia` / `resize`).
-   - Ajustement automatique de la disposition du HUD (`GameHUD.tsx`), des contrôles tactiles virtuels (`TouchHUDCustomizer.tsx`) et du menu principal (`MainMenu.tsx`).
-   - Redimensionnement fluide du canvas de jeu en fonction de l'espace disponible selon que l'appareil est en portrait ou en paysage.
+## User Requirements
+- Implement haptic feedback using the Vibration API (`navigator.vibrate`) on mobile touch buttons (Dash, Recharge, Orders, etc.) to improve tactile sensation during gameplay.
+- Specific patterns: Light click (10ms) for general buttons, distinct pulse (30ms) for dash.
+- Optimize virtual menu navigation on mobile with robust touch screen support, including a master toggle for haptics in the settings/control panel.
 
-## Étapes de réalisation
-1. **Service / Utilitaire Plein Écran** :
-   - Créer ou intégrer une fonction helper `toggleFullscreen()` gérant l'API Fullscreen du navigateur avec repli propre.
-2. **Mise à jour du Menu Principal (`MainMenu.tsx`)** :
-   - Ajouter un bouton "Plein écran" bien visible en haut de l'interface mobile.
-   - Assurer un design fluide et empilé en orientation portrait, et étendu en paysage.
-3. **Mise à jour du HUD de Jeu (`GameHUD.tsx`) & Contrôles Tactiles (`TouchHUDCustomizer.tsx`)** :
-   - Détecter les changements d'orientation et adapter la disposition des joysticks, boutons de tir, kits de soin et minimap.
-   - Ajouter le bouton de bascule plein écran dans les options rapides en jeu.
-4. **Vérification et Compilation** :
-   - Compiler l'application et valider l'absence d'erreurs de build.
+## Proposed Changes
+
+### 1. Create a Haptic Utility (`src/utils/haptics.ts`)
+- Implement a helper function `triggerHaptic(pattern: number | number[])` that checks `navigator.vibrate` and respects user settings (haptics enabled/disabled toggle stored in `localStorage`).
+- Predefined patterns:
+  - `light`: `10`
+  - `dash`: `30`
+  - `reload`: `[15, 30, 15]`
+  - `click`: `8`
+
+### 2. Update Mobile Touch Controls & Menu UI (`src/components/MobileTouchControls.tsx` & menus)
+- Integrate `triggerHaptic` calls on touch start / click for mobile buttons (Dash, Recharge, Orders, weapon switch, virtual joystick actions).
+- Enhance touch menu responsiveness and touch target sizes (minimum 44x44px hitbox, active scale micro-interactions).
+- Add a haptic feedback toggle in settings / PC control panel / mobile settings.
+
+## Verification Plan
+- Compile applet with `compile_applet`.
+- Lint with `lint_applet`.
+- Verify vibration API integration in code and touch navigation enhancements.
