@@ -1,6 +1,7 @@
 import React from 'react';
 import { Character, PlayMode, AIAgentConfig } from '../types';
 import { TouchHUDLayout } from './TouchHUDCustomizer';
+import { RadioChatter } from './RadioChatter';
 
 interface GameHUDProps {
   player: Character;
@@ -24,7 +25,9 @@ interface GameHUDProps {
   activeAgent?: AIAgentConfig;
   debugNinjaEnabled?: boolean;
   onToggleDebugNinja?: () => void;
+  onOpenTacticalWheel?: () => void;
 }
+
 
 const RARITY_COLORS = {
   common: 'border-slate-600 bg-slate-900/80 text-slate-300',
@@ -59,6 +62,7 @@ export default function GameHUD({
   activeAgent,
   debugNinjaEnabled,
   onToggleDebugNinja,
+  onOpenTacticalWheel,
 }: GameHUDProps) {
 
   // Assistant local emote helper
@@ -182,6 +186,11 @@ export default function GameHUD({
           )}
         </div>
 
+        {/* TRANSCRIPTIONS RADIO TACTIQUES & RACCOURCIS */}
+        <div className="flex-1 px-4 hidden sm:block">
+          <RadioChatter onOpenTacticalWheel={onOpenTacticalWheel} showWheelButton={true} />
+        </div>
+
         {/* FEED DE KILLS (FLUX D'ÉLIMINATIONS) */}
         <div className="flex flex-col gap-1.5 max-w-[280px] w-full text-right bg-slate-950/40 p-2 rounded-lg max-h-[140px] overflow-hidden">
           {killFeed.slice(-4).map((entry) => (
@@ -240,14 +249,32 @@ export default function GameHUD({
               ></div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-[11px] font-bold text-slate-300 truncate">{mate.name} (Allié)</span>
-                  {mate.knocked ? (
-                    <span className="text-[9px] bg-red-600 text-white font-bold px-1 rounded">K.O! CPR</span>
-                  ) : mate.alive ? (
-                    <span className="text-[9px] text-emerald-400">En vie</span>
-                  ) : (
-                    <span className="text-[9px] text-slate-600">Éliminé</span>
-                  )}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[11px] font-bold text-slate-300 truncate">{mate.name}</span>
+                    {mate.tacticalOrder && mate.alive && (
+                      <span className="text-[8px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-1 rounded uppercase tracking-tighter">
+                        ⚡ {mate.tacticalOrder.label}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {mate.knocked ? (
+                      <span className="text-[9px] bg-red-600 text-white font-bold px-1 rounded">K.O! CPR</span>
+                    ) : mate.alive ? (
+                      <span className="text-[9px] text-emerald-400">En vie</span>
+                    ) : (
+                      <span className="text-[9px] text-slate-600">Éliminé</span>
+                    )}
+                    {mate.alive && onOpenTacticalWheel && (
+                      <button
+                        onClick={onOpenTacticalWheel}
+                        className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 hover:bg-cyan-900 border border-cyan-600 text-cyan-300 font-bold active:scale-95 transition-all cursor-pointer shadow"
+                        title="Donner un ordre à votre allié"
+                      >
+                        🎯 Ordres
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 {mate.alive && (
@@ -273,7 +300,7 @@ export default function GameHUD({
           <div className="bg-slate-950/95 border-2 border-slate-800 p-4 rounded-2xl shadow-2xl flex flex-col gap-3 backdrop-blur-md">
             <div className="flex justify-between items-center">
               <span className="text-xs font-bold text-slate-300">🎮 {player.name}</span>
-              <span className="text-[10px] text-slate-500">Contrôles : ZQSD/Flèches + Clic gauche pour Tirer</span>
+              <span className="text-[10px] text-slate-400">ZQSD · <strong className="text-cyan-400">[T / C]</strong> Ordres IA · Clic Tir</span>
             </div>
 
             {/* Barre de Vie */}
@@ -591,6 +618,17 @@ export default function GameHUD({
           >
             🧪 POT PB ({player.shieldPotions})
           </button>
+
+          {onOpenTacticalWheel && (
+            <button
+              onClick={onOpenTacticalWheel}
+              className="px-3 py-2.5 h-11 rounded-xl bg-cyan-950/90 border border-cyan-500 hover:border-cyan-400 text-cyan-300 text-xs font-black active:scale-95 transition-all text-center cursor-pointer shadow-lg flex items-center gap-1"
+              title="Donner des ordres tactiques aux coéquipiers IA"
+            >
+              <span>🎯</span>
+              <span className="hidden xs:inline">ORDRES</span>
+            </button>
+          )}
 
           {equippedEmote && equippedEmote !== 'none' && onTriggerEmote && (
             <button

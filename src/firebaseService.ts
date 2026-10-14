@@ -75,7 +75,6 @@ export function initAuthSession(onUserReady: (user: AppUser) => void) {
 export async function syncStatsToCloud(userId: string, stats: PlayerStats, playerName: string) {
   if (!hasFirebase) return;
   if (!userId || userId.startsWith('guest_')) {
-    console.log('Skipping cloud sync for guest/anonymous-restricted user session.');
     return;
   }
 
@@ -111,14 +110,18 @@ export async function syncStatsToCloud(userId: string, stats: PlayerStats, playe
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-  } catch (error) {
-    console.error('Error syncing stats to cloud:', error);
+  } catch (error: any) {
+    if (!navigator.onLine || error?.code === 'unavailable' || error?.message?.includes('offline')) {
+      console.info('Firebase client is offline. Stats saved locally.');
+    } else {
+      console.warn('Could not sync stats to cloud:', error?.message || error);
+    }
   }
 }
 
 // Load stats from Firestore
 export async function loadStatsFromCloud(userId: string): Promise<Partial<PlayerStats> | null> {
-  if (!hasFirebase) return null;
+  if (!hasFirebase || !userId || userId.startsWith('guest_')) return null;
 
   try {
     const statsRef = doc(db, 'players_stats', userId);
@@ -137,14 +140,18 @@ export async function loadStatsFromCloud(userId: string): Promise<Partial<Player
         healsUsed: data.healsUsed || 0,
         distanceTraveled: data.distanceTraveled || 0,
         questsCompleted: data.questsCompleted || [],
-        // The list of matches is loaded separately or stored locally for speed
       };
     }
-  } catch (error) {
-    console.error('Error loading stats from cloud:', error);
+  } catch (error: any) {
+    if (!navigator.onLine || error?.code === 'unavailable' || error?.message?.includes('offline')) {
+      console.info('Firebase client is offline. Loading stats from local cache.');
+    } else {
+      console.warn('Could not load stats from cloud:', error?.message || error);
+    }
   }
   return null;
 }
+
 
 // Log a match history to Firestore
 export async function logMatchHistoryToCloud(
@@ -152,9 +159,8 @@ export async function logMatchHistoryToCloud(
   playerName: string, 
   record: MatchHistory
 ) {
-  if (!hasFirebase) return;
+  if (!hasFirebase || !navigator.onLine) return;
   if (!userId || userId.startsWith('guest_')) {
-    console.log('Skipping cloud match logging for guest/anonymous-restricted user session.');
     return;
   }
 
@@ -171,14 +177,18 @@ export async function logMatchHistoryToCloud(
       weaponOfChoice: record.weaponOfChoice,
       timestamp: serverTimestamp()
     });
-  } catch (error) {
-    console.error('Error logging match history to cloud:', error);
+  } catch (error: any) {
+    if (!navigator.onLine || error?.code === 'unavailable' || error?.message?.includes('offline')) {
+      console.info('Firebase client is offline. Match history recorded locally.');
+    } else {
+      console.warn('Could not log match history to cloud:', error?.message || error);
+    }
   }
 }
 
 // Fetch the top 20 players leaderboards
 export async function fetchLeaderboards(sortBy: 'wins' | 'kills' | 'level' = 'wins'): Promise<LeaderboardEntry[]> {
-  if (!hasFirebase) return [];
+  if (!hasFirebase || !navigator.onLine) return [];
 
   try {
     const lbCol = collection(db, 'leaderboards');
@@ -199,8 +209,13 @@ export async function fetchLeaderboards(sortBy: 'wins' | 'kills' | 'level' = 'wi
       });
     });
     return results;
-  } catch (error) {
-    console.error('Error fetching leaderboards:', error);
+  } catch (error: any) {
+    if (!navigator.onLine || error?.code === 'unavailable' || error?.message?.includes('offline')) {
+      console.info('Firebase client is offline. Leaderboard unavailable.');
+    } else {
+      console.warn('Could not fetch leaderboards:', error?.message || error);
+    }
     return [];
   }
 }
+

@@ -1237,8 +1237,90 @@ export function generateProceduralArena(type: ArenaType, aiCustomTheme?: AICusto
     }
   }
 
+  // ==========================================
+  // STRUCTURES TACTIQUES & POINTS D'INTÉRÊT COMMUNS
+  // ==========================================
+  // 1. Stations Radar avec coupole de balayage
+  addBuildingSafely({
+    x: 450,
+    y: 1250,
+    w: 80,
+    h: 80,
+    color: '#1e293b',
+    type: 'structure',
+    subType: 'radar_station'
+  });
+  addBuildingSafely({
+    x: 2050,
+    y: 1250,
+    w: 80,
+    h: 80,
+    color: '#1e293b',
+    type: 'structure',
+    subType: 'radar_station'
+  });
+
+  // 2. Générateurs d'Énergie avec circuits plasma
+  addBuildingSafely({
+    x: 1250,
+    y: 450,
+    w: 75,
+    h: 75,
+    color: '#0f172a',
+    type: 'structure',
+    subType: 'power_generator'
+  });
+  addBuildingSafely({
+    x: 1250,
+    y: 2050,
+    w: 75,
+    h: 75,
+    color: '#0f172a',
+    type: 'structure',
+    subType: 'power_generator'
+  });
+
+  // 3. Bunkers de Commandement blindés
+  addBuildingSafely({
+    x: 900,
+    y: 900,
+    w: 110,
+    h: 75,
+    color: '#334155',
+    type: 'structure',
+    subType: 'command_bunker'
+  });
+  addBuildingSafely({
+    x: 1600,
+    y: 1600,
+    w: 110,
+    h: 75,
+    color: '#334155',
+    type: 'structure',
+    subType: 'command_bunker'
+  });
+
+  // 4. Cratères d'impact d'artillerie
+  const craterLocs = [
+    { x: 800, y: 1550 },
+    { x: 1700, y: 950 },
+    { x: 1500, y: 800 },
+  ];
+  craterLocs.forEach(c => {
+    addBuildingSafely({
+      x: c.x,
+      y: c.y,
+      w: 70,
+      h: 70,
+      color: '#1c1917',
+      type: 'structure',
+      subType: 'crater_impact'
+    });
+  });
+
   return { buildings, tiles, config };
 }
+
 
 export function generateMapStructures(): Building[] {
   // Option par défaut : choisit une carte aléatoire si appelée sans argument

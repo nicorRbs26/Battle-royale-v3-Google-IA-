@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { PlayMode, Character, LootItem, Projectile, GameParticle, StormZone, PlayerStats, ArenaType, EnvironmentalTile, AICustomTheme, AIEnvironmentEvent, SupplyDrop, PoisonZone, WeaponType, Difficulty, Chest, AIAgentConfig } from './types';
+import { PlayMode, Character, LootItem, Projectile, GameParticle, StormZone, PlayerStats, ArenaType, EnvironmentalTile, AICustomTheme, AIEnvironmentEvent, SupplyDrop, PoisonZone, WeaponType, Difficulty, Chest, AIAgentConfig, TacticalOrderType, TacticalOrder, TacticalPing, WeatherEventType } from './types';
 import { MAP_SIZE, BOT_NAMES, getDistance, generateRandomLoot, generateWeapon, Building, generateProceduralArena, ARENA_THEMES, checkCircleCollision, checkPointInRect } from './utils';
 import { sounds } from './audio';
 import MainMenu from './components/MainMenu';
@@ -14,6 +14,9 @@ import { TouchHUDLayout, ElementPosition } from './components/TouchHUDCustomizer
 import { AIAgentsModal } from './components/AIAgentsModal';
 import { DebugNinjaInspector } from './components/DebugNinjaInspector';
 import { PRESET_AI_AGENTS, getCachedImportedAgents, getActiveAgentId } from './googleDriveService';
+import { TacticalWheel } from './components/TacticalWheel';
+import { voiceComms } from './services/voiceComms';
+
 
 const DEFAULT_TOUCH_LAYOUT: TouchHUDLayout = {
   leftJoystick: { x: 15, y: 80 },
@@ -175,11 +178,20 @@ export default function App() {
   const freeCamPosRef = useRef({ x: MAP_SIZE / 2, y: MAP_SIZE / 2 });
   const lastMousePosRef = useRef({ x: 0, y: 0 });
 
-  // Variations Climatologiques Météo (Acid Rain, Sandstorms, Magma Comets)
-  const [weatherEvent, setWeatherEvent] = useState<'none' | 'acid_rain' | 'sandstorm' | 'magma_comets'>('none');
+  // Variations Climatologiques Météo (Acid Rain, Sandstorms, Magma Comets, Thunderstorm, Blizzard)
+  const [weatherEvent, setWeatherEvent] = useState<WeatherEventType>('none');
   const [weatherDuration, setWeatherDuration] = useState<number>(0);
   const weatherEventTimerRef = useRef<number>(20); // Premier évènement après 20s
   const cometsRef = useRef<{ id: string; x: number; y: number; timer: number; radius: number }[]>([]);
+  const lightningFlashRef = useRef<number>(0);
+  const nextLightningTimeRef = useRef<number>(0);
+
+  // Roue d'Ordres Tactiques & Balises d'Escouade
+  const [isTacticalWheelOpen, setIsTacticalWheelOpen] = useState<boolean>(false);
+  const activeTacticalOrderRef = useRef<TacticalOrder | null>(null);
+  const tacticalPingsRef = useRef<TacticalPing[]>([]);
+  const mouseWorldPosRef = useRef<{ x: number; y: number }>({ x: MAP_SIZE / 2, y: MAP_SIZE / 2 });
+
 
   // End game stats summary
   const [endGameRank, setEndGameRank] = useState<number>(40);
@@ -219,8 +231,8 @@ export default function App() {
 
   const keysPressedRef = useRef<Record<string, boolean>>({});
   const mousePosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const mouseWorldPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const isMouseDownRef = useRef<boolean>(false);
+
 
   // Mode de Contrôle étendu : Touchscreen & Gamepad Refs
   const touchMoveVectorRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -282,6 +294,90 @@ export default function App() {
       spawnParticlesCircle(p.x, p.y, '#f59e0b', 8);
     }
   };
+
+  // Assigner un ordre tactique à l'escouade IA
+  const handleSelectTacticalOrder = (orderType: TacticalOrderType) => {
+    const p = playerRef.current;
+    if (!p) return;
+
+    let orderX = Math.round(mouseWorldPosRef.current.x);
+    let orderY = Math.round(mouseWorldPosRef.current.y);
+
+    if (orderType === 'follow') {
+      orderX = Math.round(p.x);
+      orderY = Math.round(p.y);
+    }
+
+    const titles: Record<TacticalOrderType, string> = {
+      follow: 'REGROUPEMENT',
+      hold: 'TENIR POSITION',
+      attack: 'ASSAUT COORDONNÉ',
+      heal: 'REPLI & SOINS',
+      scavenge: 'FOUILLE & RECON',
+    };
+
+    const colors: Record<TacticalOrderType, string> = {
+      follow: '#06b6d4',
+      hold: '#10b981',
+      attack: '#f43f5e',
+      heal: '#f59e0b',
+      scavenge: '#a855f7',
+    };
+
+    let targetEnemyId: string | undefined = undefined;
+    if (orderType === 'attack') {
+      // Trouver l'ennemi le plus proche du point désigné
+      let minD = 99999;
+      charactersRef.current.forEach(c => {
+        if (c.alive && c.teamId !== p.teamId) {
+          const d = getDistance(orderX, orderY, c.x, c.y);
+          if (d < minD) {
+            minD = d;
+            targetEnemyId = c.id;
+          }
+        }
+      });
+    }
+
+    const orderId = `order-${Date.now()}`;
+    const orderObj: TacticalOrder = {
+      id: orderId,
+      type: orderType,
+      x: orderX,
+      y: orderY,
+      assignedAt: Date.now(),
+      label: titles[orderType],
+      targetCharacterId: targetEnemyId,
+    };
+
+    activeTacticalOrderRef.current = orderObj;
+
+    // Créer une balise visuelle animée sur le terrain
+    const newPing: TacticalPing = {
+      id: `ping-${Date.now()}`,
+      type: orderType,
+      x: orderX,
+      y: orderY,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 8500,
+      label: titles[orderType],
+      color: colors[orderType],
+    };
+    tacticalPingsRef.current = [newPing, ...tacticalPingsRef.current.slice(0, 3)];
+
+    // Diffuser l'ordre à tous les alliés de l'escouade
+    charactersRef.current.forEach(c => {
+      if (c.teamId === p.teamId && c.isBot) {
+        c.tacticalOrder = orderObj;
+      }
+    });
+
+    // Synthèse vocale tactique et confirmation radio
+    voiceComms.sayOrderAcknowledged(activeAgent, orderType);
+    pushKillFeed(`🎯 [ORDRE TACTIQUE] ${titles[orderType]} transmis à l'escouade !`);
+    sounds.playLoot();
+  };
+
 
   const [isOpeningChest, setIsOpeningChest] = useState<boolean>(false);
   const [chestOpenProgress, setChestOpenProgress] = useState<number>(0);
@@ -450,13 +546,17 @@ export default function App() {
           // Action / Switch interact (optionnel, ici switch slot)
           const nextSlot = playerRef.current.activeWeaponIndex === 0 ? 1 : 0;
           switchPlayerWeapon(nextSlot);
-        } else if (key === 't') {
+        } else if (key === 't' || key === 'c') {
+          // Roue d'ordres tactiques pour diriger l'escouade IA
+          setIsTacticalWheelOpen(true);
+        } else if (key === 'b') {
           // Exprimer émote équipée
           handleTriggerEmote();
         } else if (key === 'm') {
           // Toggle minimap agrandie 
           setIsMapEnlarged(prev => !prev);
         }
+
       }
     };
 
@@ -623,8 +723,13 @@ export default function App() {
     setWeatherDuration(0);
     weatherEventTimerRef.current = 20; // Premier climat après 20 sec de répit
     cometsRef.current = [];
+    lightningFlashRef.current = 0;
+    setIsTacticalWheelOpen(false);
+    activeTacticalOrderRef.current = null;
+    tacticalPingsRef.current = [];
     setKills(0);
     setKillFeed([]);
+
 
     // Déterminer le thème de l'arène à générer
     let activeTheme: ArenaType = 'military_forest';
@@ -1064,9 +1169,24 @@ export default function App() {
       mousePosRef.current.y = currentY;
       lastMousePosRef.current.x = currentX;
       lastMousePosRef.current.y = currentY;
+
+      // Suivi des coordonnées mondiales pour les ordres tactiques
+      const cam = cameraRef.current;
+      const screenW = canvas.width;
+      const screenH = canvas.height;
+      mouseWorldPosRef.current = {
+        x: Math.max(0, Math.min(MAP_SIZE, cam.x + (currentX - screenW / 2))),
+        y: Math.max(0, Math.min(MAP_SIZE, cam.y + (currentY - screenH / 2)))
+      };
     };
 
     const handleMouseDown = (e: MouseEvent) => {
+      if (e.button === 1) {
+        // Clic molette souris : bascule la roue d'ordres tactiques
+        e.preventDefault();
+        setIsTacticalWheelOpen(prev => !prev);
+        return;
+      }
       if (e.button === 0) {
         isMouseDownRef.current = true;
         const rect = canvas.getBoundingClientRect();
@@ -1074,6 +1194,7 @@ export default function App() {
         lastMousePosRef.current.y = e.clientY - rect.top;
       }
     };
+
 
     const handleWheel = (e: WheelEvent) => {
       if (spectatorMode) {
@@ -1489,7 +1610,7 @@ export default function App() {
     if (weatherEventTimerRef.current <= 0) {
       if (weatherEvent === 'none') {
         // Selectionner un nouveau climat extreme aléatoire
-        const weathers: ('acid_rain' | 'sandstorm' | 'magma_comets')[] = ['acid_rain', 'sandstorm', 'magma_comets'];
+        const weathers: WeatherEventType[] = ['acid_rain', 'sandstorm', 'magma_comets', 'thunderstorm', 'blizzard'];
         const chosen = weathers[Math.floor(Math.random() * weathers.length)];
         const duration = 25 + Math.random() * 10; // 25 à 35 secondes
 
@@ -1505,6 +1626,13 @@ export default function App() {
         } else if (chosen === 'sandstorm') {
           noteText = '🌪️ SANDSTORM WARNING : Vision de détection drastiquement réduite par d\'épais vents de sable !';
           noteType = 'warning';
+        } else if (chosen === 'thunderstorm') {
+          noteText = '⚡ ORAGE ÉLECTRIQUE TACTIQUE : Violents éclairs aveuglants et rafales de pluie !';
+          noteType = 'warning';
+          nextLightningTimeRef.current = Date.now() + 2500;
+        } else if (chosen === 'blizzard') {
+          noteText = '❄️ BLIZZARD ARCTIQUE : Vents glaciaux ralentissant la course et vision givrée !';
+          noteType = 'warning';
         } else {
           noteText = '☄️ COMPTE À REBOURS COMÈTES DE LAVA : Évitez les zones d\'impact thermiques !';
           noteType = 'danger';
@@ -1516,7 +1644,9 @@ export default function App() {
           expiresAt: Date.now() + 6000,
         });
         pushKillFeed(`🚨 [METEO] Début d'un climat extrême : ${chosen.toUpperCase()} !`);
+        voiceComms.sayStormWarning(activeAgent, chosen.toUpperCase());
         sounds.playExplosion();
+
       } else {
         // Retour au calme météo
         setWeatherEvent('none');
@@ -1647,7 +1777,27 @@ export default function App() {
           activeComets.splice(i, 1);
         }
       }
+    } else if (weatherEvent === 'thunderstorm') {
+      if (Date.now() > nextLightningTimeRef.current) {
+        nextLightningTimeRef.current = Date.now() + 5000 + Math.random() * 6500;
+        lightningFlashRef.current = 1.0;
+        voiceComms.playThunderRumble();
+        screenShakeRef.current = Math.max(screenShakeRef.current, 7);
+      }
+    } else if (weatherEvent === 'blizzard') {
+      characters.forEach(char => {
+        if (char.alive && !char.knocked) {
+          char.tempSpeedMultiplier = 0.88; // Froid mordant ralentissant la marche
+        }
+      });
     }
+
+    if (lightningFlashRef.current > 0.01) {
+      lightningFlashRef.current *= 0.88;
+    } else {
+      lightningFlashRef.current = 0;
+    }
+
 
     // 3. Simuler les Supply Drops actifs
     supplyDropsRef.current.forEach(drop => {
@@ -2253,6 +2403,57 @@ export default function App() {
             char.targetY = downedAllies[0].y;
           } 
           
+          // ÉTAPE 3.5: Respect des Ordres Tactiques du Joueur pour les alliés de l'escouade
+          else if (char.teamId === playerRef.current?.teamId && (char.tacticalOrder || activeTacticalOrderRef.current)) {
+            const order = char.tacticalOrder || activeTacticalOrderRef.current!;
+            const p = playerRef.current!;
+
+            if (order.type === 'follow') {
+              char.aiState = 'follow_leader';
+              const offsetAngle = char.id.charCodeAt(0) * 0.8;
+              char.targetX = p.x + Math.cos(offsetAngle) * 95;
+              char.targetY = p.y + Math.sin(offsetAngle) * 95;
+            } else if (order.type === 'hold') {
+              char.aiState = 'hold_pos';
+              char.targetX = order.x;
+              char.targetY = order.y;
+            } else if (order.type === 'attack') {
+              char.aiState = 'assault_target';
+              char.targetCharacterId = order.targetCharacterId;
+              char.targetX = order.x;
+              char.targetY = order.y;
+            } else if (order.type === 'heal') {
+              char.aiState = 'retreat_heal';
+              if (char.health < 90 && char.medkits > 0) {
+                char.medkits -= 1;
+                char.health = Math.min(100, char.health + 50);
+                sounds.playHeal();
+              } else if (char.shield < 90 && char.shieldPotions > 0) {
+                char.shieldPotions -= 1;
+                char.shield = Math.min(100, char.shield + 50);
+                sounds.playHeal();
+              }
+            } else if (order.type === 'scavenge') {
+              char.aiState = 'scavenge_area';
+              let bestTarget: LootItem | null = null;
+              let bestDist = 800;
+              lootItemsRef.current.forEach(l => {
+                const d = getDistance(char.x, char.y, l.x, l.y);
+                if (d < bestDist && (l.rarity === 'epic' || l.rarity === 'legendary')) {
+                  bestDist = d;
+                  bestTarget = l;
+                }
+              });
+              if (bestTarget) {
+                char.targetX = (bestTarget as LootItem).x;
+                char.targetY = (bestTarget as LootItem).y;
+              } else {
+                char.targetX = order.x;
+                char.targetY = order.y;
+              }
+            }
+          }
+
           // ÉTAPE 4: Recherche d'ennemis en priorité
           else {
             const activeEnemies = characters.filter(c => c.alive && c.teamId !== char.teamId);
@@ -2276,12 +2477,16 @@ export default function App() {
             if (closestEnemy) {
               char.aiState = 'combat';
               char.targetCharacterId = (closestEnemy as Character).id;
+              if (char.teamId === playerRef.current?.teamId) {
+                voiceComms.sayEnemySpotted(char.aiAgent, (closestEnemy as Character).name);
+              }
             } 
             
             // ÉTAPE 5: Si rien, chercher du butin proche ou un largage de ravitaillement !
             else {
               let closestLoot: LootItem | null = null;
               let minLootDist = 500;
+
               
               const activeDrops = supplyDropsRef.current.filter(d => d.isLanded && !d.isOpened);
               let targetDrop = null;
@@ -2416,7 +2621,95 @@ export default function App() {
           char.aiState = 'idle';
         }
       }
+
+      else if (char.aiState === 'follow_leader') {
+        if (char.targetX && char.targetY) {
+          const d = getDistance(char.x, char.y, char.targetX, char.targetY);
+          if (d > 45) {
+            char.angle = getSmartBotAngle(char, char.targetX, char.targetY, structures);
+            const currentSpeed = char.speed * (char.tempSpeedMultiplier || 1.0) * (d > 180 ? 1.25 : 1.0);
+            const vx = Math.cos(char.angle) * currentSpeed;
+            const vy = Math.sin(char.angle) * currentSpeed;
+            handleCharacterMovementWithCollisions(char, vx, vy, structures);
+          }
+        }
+        const p = playerRef.current;
+        if (p) {
+          const threat = characters.find(c => c.alive && c.teamId !== char.teamId && getDistance(c.x, c.y, p.x, p.y) < 380);
+          if (threat) {
+            char.angle = Math.atan2(threat.y - char.y, threat.x - char.x);
+            playerShootWeapon(char);
+          }
+        }
+      }
+
+      else if (char.aiState === 'hold_pos') {
+        if (char.targetX && char.targetY) {
+          const d = getDistance(char.x, char.y, char.targetX, char.targetY);
+          if (d > 35) {
+            char.angle = getSmartBotAngle(char, char.targetX, char.targetY, structures);
+            const currentSpeed = char.speed * (char.tempSpeedMultiplier || 1.0);
+            const vx = Math.cos(char.angle) * currentSpeed;
+            const vy = Math.sin(char.angle) * currentSpeed;
+            handleCharacterMovementWithCollisions(char, vx, vy, structures);
+          }
+        }
+        const intruder = characters.find(c => c.alive && c.teamId !== char.teamId && getDistance(c.x, c.y, char.x, char.y) < 350);
+        if (intruder) {
+          char.angle = Math.atan2(intruder.y - char.y, intruder.x - char.x);
+          playerShootWeapon(char);
+        }
+      }
+
+      else if (char.aiState === 'assault_target') {
+        let target = char.targetCharacterId ? characters.find(c => c.id === char.targetCharacterId && c.alive) : null;
+        if (!target) {
+          target = characters.find(c => c.alive && c.teamId !== char.teamId && getDistance(c.x, c.y, char.x, char.y) < 650) || null;
+        }
+        if (target) {
+          char.angle = Math.atan2(target.y - char.y, target.x - char.x);
+          const d = getDistance(char.x, char.y, target.x, target.y);
+          const moveAngle = getSmartBotAngle(char, target.x, target.y, structures);
+          const currentSpeed = char.speed * (char.tempSpeedMultiplier || 1.0) * 1.15;
+          const vx = Math.cos(moveAngle) * currentSpeed;
+          const vy = Math.sin(moveAngle) * currentSpeed;
+          handleCharacterMovementWithCollisions(char, vx, vy, structures);
+
+          const activeW = char.weapons[char.activeWeaponIndex];
+          if (activeW && d < activeW.range + 50) {
+            playerShootWeapon(char);
+          }
+        } else {
+          char.aiState = 'follow_leader';
+        }
+      }
+
+      else if (char.aiState === 'retreat_heal') {
+        const enemyNear = characters.find(c => c.alive && c.teamId !== char.teamId && getDistance(c.x, c.y, char.x, char.y) < 450);
+        if (enemyNear) {
+          const fleeAngle = Math.atan2(char.y - enemyNear.y, char.x - enemyNear.x);
+          char.angle = fleeAngle;
+          const currentSpeed = char.speed * (char.tempSpeedMultiplier || 1.0);
+          const vx = Math.cos(fleeAngle) * currentSpeed;
+          const vy = Math.sin(fleeAngle) * currentSpeed;
+          handleCharacterMovementWithCollisions(char, vx, vy, structures);
+        }
+      }
+
+      else if (char.aiState === 'scavenge_area') {
+        if (char.targetX && char.targetY) {
+          const d = getDistance(char.x, char.y, char.targetX, char.targetY);
+          if (d > 25) {
+            char.angle = getSmartBotAngle(char, char.targetX, char.targetY, structures);
+            const currentSpeed = char.speed * (char.tempSpeedMultiplier || 1.0);
+            const vx = Math.cos(char.angle) * currentSpeed;
+            const vy = Math.sin(char.angle) * currentSpeed;
+            handleCharacterMovementWithCollisions(char, vx, vy, structures);
+          }
+        }
+      }
     });
+
 
     // --- COLLISION RAMASSAGE BUTIN (AUTO S'IL PASSE DESSUS) ---
     characters.forEach(char => {
@@ -2917,9 +3210,13 @@ export default function App() {
     // Calculer répartition bouclier vs vie
     if (char.shield > 0) {
       char.shield -= dmg;
-      if (char.shield < 0) {
+      if (char.shield <= 0) {
         char.health += char.shield; // Soustraire le débordement
         char.shield = 0;
+        // Alerte radio si c'est un allié IA
+        if (char.teamId === 'team-player' && char.isBot) {
+          voiceComms.sayShieldBroken(char.aiAgent);
+        }
       }
       // Étincelles bleues
       spawnParticlesCircle(char.x, char.y, '#60a5fa', 6);
@@ -2949,6 +3246,9 @@ export default function App() {
         const attacker = charactersRef.current.find(c => c.id === attackerId);
         if (attacker) {
           attacker.kills += 1;
+          if (attacker.teamId === 'team-player' && attacker.isBot) {
+            voiceComms.sayKillConfirmed(attacker.aiAgent);
+          }
           if (attacker.isPlayer) {
             setKills(attacker.kills);
             // vibe: Track kill by weapon type for specific quests
@@ -2956,6 +3256,7 @@ export default function App() {
             if (activeW) {
               matchKillsByTypeRef.current[activeW.type] = (matchKillsByTypeRef.current[activeW.type] || 0) + 1;
             }
+
             // Anti-Cheat: Enregistrer l'événement d'élimination
             matchEventsLogRef.current.push({
               t: Date.now() - matchStartTimeRef.current,
@@ -3982,6 +4283,100 @@ export default function App() {
           ctx.lineTo(sx + halfW - 4, sy + halfH - 12);
           ctx.stroke();
         } 
+        else if (s.subType === 'radar_station') {
+          // Station radar tactique avec coupole et balayage rotatif
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(sx - halfW, sy - halfH, s.w, s.h);
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(sx - halfW, sy - halfH, s.w, s.h);
+
+          // Coupole radar circulaire
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.arc(sx, sy, halfW * 0.65, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          // Rayon de balayage radar rotatif
+          const sweepAngle = (Date.now() * 0.003) % (Math.PI * 2);
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(sx + Math.cos(sweepAngle) * (halfW * 0.65), sy + Math.sin(sweepAngle) * (halfW * 0.65));
+          ctx.stroke();
+
+          // Diode centrale clignotante
+          ctx.fillStyle = (Date.now() % 600 < 300) ? '#22c55e' : '#ef4444';
+          ctx.beginPath();
+          ctx.arc(sx, sy, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        else if (s.subType === 'power_generator') {
+          // Générateur d'énergie à plasma
+          ctx.fillStyle = '#020617';
+          ctx.fillRect(sx - halfW, sy - halfH, s.w, s.h);
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(sx - halfW, sy - halfH, s.w, s.h);
+
+          // Cœur plasma pulsant
+          const pulseP = Math.sin(Date.now() * 0.008) * 0.25 + 0.75;
+          ctx.fillStyle = `rgba(6, 182, 212, ${pulseP * 0.6})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, halfW * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Lignes de bobinage magnétique
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(sx - halfW + 6, sy);
+          ctx.lineTo(sx + halfW - 6, sy);
+          ctx.moveTo(sx, sy - halfH + 6);
+          ctx.lineTo(sx, sy + halfH - 6);
+          ctx.stroke();
+        }
+        else if (s.subType === 'command_bunker') {
+          // Bunker blindé de commandement
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(sx - halfW, sy - halfH, s.w, s.h);
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 3.5;
+          ctx.strokeRect(sx - halfW, sy - halfH, s.w, s.h);
+
+          // Meurtrière de visée
+          ctx.fillStyle = '#991b1b';
+          ctx.fillRect(sx - halfW + 10, sy - 6, s.w - 20, 12);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(sx - 15, sy - 3, 30, 6);
+
+          // Bandes de sécurité jaunes
+          ctx.fillStyle = '#eab308';
+          ctx.fillRect(sx - halfW, sy - halfH, s.w, 5);
+          ctx.fillRect(sx - halfW, sy + halfH - 5, s.w, 5);
+        }
+        else if (s.subType === 'crater_impact') {
+          // Cratère d'impact d'artillerie
+          ctx.fillStyle = '#1c1917';
+          ctx.beginPath();
+          ctx.arc(sx, sy, halfW, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#44403c';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          // Cœur incandescent du cratère
+          const glow = Math.sin(Date.now() * 0.004) * 0.2 + 0.5;
+          ctx.fillStyle = `rgba(239, 68, 68, ${glow * 0.4})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, halfW * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+ 
         else {
           if (currentArena === 'ai_custom' && aiCustomThemeRef.current) {
             const theme = aiCustomThemeRef.current;
@@ -4878,14 +5273,145 @@ export default function App() {
     ctx.arc(sx, sy, sRadiusScreen + 7, 0, Math.PI * 2);
     ctx.stroke();
 
+    // --- RENDRE LES BALISES D'ORDRES TACTIQUES DE L'ESCOUADE ---
+    tacticalPingsRef.current.forEach(ping => {
+      if (Date.now() < ping.expiresAt) {
+        const px = toScreenX(ping.x);
+        const py = toScreenY(ping.y);
+        const age = Date.now() - ping.createdAt;
+        const pulse1 = (age % 1400) / 1400;
+        const pulse2 = ((age + 700) % 1400) / 1400;
+
+        ctx.save();
+        // Anneaux d'onde holographique concentrique
+        ctx.strokeStyle = ping.color;
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = Math.max(0, 1 - pulse1);
+        ctx.beginPath();
+        ctx.arc(px, py, 14 + pulse1 * 55, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.globalAlpha = Math.max(0, 1 - pulse2);
+        ctx.beginPath();
+        ctx.arc(px, py, 14 + pulse2 * 55, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Disque émetteur au sol
+        ctx.globalAlpha = 0.95;
+        ctx.fillStyle = ping.color;
+        ctx.beginPath();
+        ctx.arc(px, py, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Faisceau lumineux vertical holographique
+        const beamGrad = ctx.createLinearGradient(px, py, px, py - 45);
+        beamGrad.addColorStop(0, ping.color);
+        beamGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.fillRect(px - 3, py - 45, 6, 45);
+
+        // Étiquette d'ordre flottante
+        const floatY = py - 40 + Math.sin(age * 0.006) * 4;
+        const tagText = `[ORDRE: ${ping.label}]`;
+        ctx.font = 'bold 10px monospace';
+        const tagW = ctx.measureText(tagText).width + 14;
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.92)';
+        ctx.fillRect(px - tagW / 2, floatY - 12, tagW, 18);
+        ctx.strokeStyle = ping.color;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(px - tagW / 2, floatY - 12, tagW, 18);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(tagText, px, floatY - 3);
+
+        // Ligne laser en pointillés reliant les coéquipiers IA à l'objectif
+        charactersRef.current.forEach(c => {
+          if (c.alive && c.teamId === playerRef.current?.teamId && c.isBot) {
+            const ax = toScreenX(c.x);
+            const ay = toScreenY(c.y);
+            ctx.strokeStyle = ping.color;
+            ctx.lineWidth = 1.8;
+            ctx.globalAlpha = 0.55;
+            ctx.setLineDash([8, 6]);
+            ctx.lineDashOffset = -(Date.now() * 0.025) % 14;
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        });
+
+        ctx.restore();
+      }
+    });
+
     // --- RENDRE LES EFFETS CLIMATIQUES VISUELS ET AMBIANCES REELLES ---
     if (weatherEvent !== 'none') {
       ctx.save();
-      if (weatherEvent === 'acid_rain') {
-        // Pluie verte acide tombant délicatement en diagonale
-        ctx.strokeStyle = 'rgba(34, 197, 94, 0.4)';
-        ctx.lineWidth = 1.8;
-        const rainCount = 45;
+      const screenLeft = toScreenX(camX - viewW / 2);
+      const screenTop = toScreenY(camY - viewH / 2);
+
+      if (weatherEvent === 'thunderstorm') {
+        // Ambiance orageuse sombre indigo
+        ctx.fillStyle = 'rgba(10, 15, 32, 0.42)';
+        ctx.fillRect(screenLeft, screenTop, viewW, viewH);
+
+        // Pluie battante dense
+        ctx.strokeStyle = 'rgba(147, 197, 253, 0.65)';
+        ctx.lineWidth = 2.0;
+        const stormDrops = 60;
+        for (let i = 0; i < stormDrops; i++) {
+          const rx = camX + (Math.sin(i * 127) * (viewW * 0.75));
+          const ry = camY + (Math.cos(i * 89) * (viewH * 0.75));
+          const sxLoc = toScreenX(rx);
+          const syLoc = toScreenY(ry);
+          ctx.beginPath();
+          ctx.moveTo(sxLoc, syLoc);
+          ctx.lineTo(sxLoc - 16, syLoc + 34);
+          ctx.stroke();
+        }
+
+        // Éclair blanc bleuté illuminant le champ de bataille
+        if (lightningFlashRef.current > 0.02) {
+          ctx.fillStyle = `rgba(224, 242, 254, ${lightningFlashRef.current * 0.68})`;
+          ctx.fillRect(screenLeft, screenTop, viewW, viewH);
+        }
+      }
+
+      else if (weatherEvent === 'blizzard') {
+        // Teinte de givre polaire
+        ctx.fillStyle = 'rgba(219, 234, 254, 0.2)';
+        ctx.fillRect(screenLeft, screenTop, viewW, viewH);
+
+        // Flocons de neige tourbillonnants avec vents oscillants
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        const flakesCount = 55;
+        for (let i = 0; i < flakesCount; i++) {
+          const fx = camX + (Math.sin(i * 67 + Date.now() * 0.001) * (viewW * 0.7));
+          const fy = camY + (Math.cos(i * 113 + Date.now() * 0.002) * (viewH * 0.7));
+          const sxLoc = toScreenX(fx);
+          const syLoc = toScreenY(fy);
+          ctx.beginPath();
+          ctx.arc(sxLoc, syLoc, 2.2 + (i % 3) * 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      else if (weatherEvent === 'acid_rain') {
+        // Ambiance toxique acide
+        ctx.fillStyle = 'rgba(20, 83, 45, 0.14)';
+        ctx.fillRect(screenLeft, screenTop, viewW, viewH);
+
+        // Pluie verte acide tombant en diagonale
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.55)';
+        ctx.lineWidth = 2.0;
+        const rainCount = 50;
         for (let i = 0; i < rainCount; i++) {
           const rx = camX + (Math.sin(i * 139) * (viewW * 0.7));
           const ry = camY + (Math.cos(i * 97) * (viewH * 0.7));
@@ -4893,32 +5419,50 @@ export default function App() {
           const syLoc = toScreenY(ry);
           ctx.beginPath();
           ctx.moveTo(sxLoc, syLoc);
-          ctx.lineTo(sxLoc - 12, syLoc + 24);
+          ctx.lineTo(sxLoc - 14, syLoc + 28);
           ctx.stroke();
         }
       } 
       
       else if (weatherEvent === 'sandstorm') {
-        // Tempête ocre desertique avec vents de sable horizontaux
-        ctx.fillStyle = 'rgba(230, 160, 80, 0.16)';
-        ctx.fillRect(toScreenX(camX - viewW / 2), toScreenY(camY - viewH / 2), viewW, viewH);
+        // Tempête ocre desertique avec vents de sable denses
+        ctx.fillStyle = 'rgba(230, 160, 80, 0.22)';
+        ctx.fillRect(screenLeft, screenTop, viewW, viewH);
 
-        ctx.strokeStyle = 'rgba(217, 119, 6, 0.45)';
-        ctx.lineWidth = 1.2;
-        const windLinesCount = 35;
+        ctx.strokeStyle = 'rgba(217, 119, 6, 0.5)';
+        ctx.lineWidth = 1.4;
+        const windLinesCount = 40;
         for (let i = 0; i < windLinesCount; i++) {
-          const wx = camX + (Math.sin(i * 57) * (viewW * 0.7)) + ((Date.now() * 0.35) % 200) - 100;
+          const wx = camX + (Math.sin(i * 57) * (viewW * 0.7)) + ((Date.now() * 0.4) % 240) - 120;
           const wy = camY + (Math.cos(i * 81) * (viewH * 0.7));
           const sxLoc = toScreenX(wx);
           const syLoc = toScreenY(wy);
           ctx.beginPath();
           ctx.moveTo(sxLoc, syLoc);
-          ctx.lineTo(sxLoc + 45, syLoc + 2);
+          ctx.lineTo(sxLoc + 55, syLoc + 2);
           ctx.stroke();
         }
       }
+
+      else if (weatherEvent === 'magma_comets') {
+        // Lueur volcanique atmosphérique
+        ctx.fillStyle = 'rgba(225, 29, 72, 0.16)';
+        ctx.fillRect(screenLeft, screenTop, viewW, viewH);
+
+        // Braises incandescentes montantes
+        ctx.fillStyle = 'rgba(249, 115, 22, 0.75)';
+        for (let i = 0; i < 35; i++) {
+          const ex = camX + (Math.sin(i * 43) * (viewW * 0.65));
+          const ey = camY + (Math.cos(i * 71) * (viewH * 0.65)) - ((Date.now() * 0.15 + i * 20) % 150);
+          ctx.beginPath();
+          ctx.arc(toScreenX(ex), toScreenY(ey), 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
       ctx.restore();
     }
+
 
     // Restaurer le zoom d'arène pour que le HUD / Minimap soit à l'échelle 1:1 de l'écran stable
     ctx.restore();
@@ -5028,7 +5572,33 @@ export default function App() {
       ctx.restore();
     });
 
+    // 3. Dessiner les balises d'ordres tactiques sur la minimap
+    tacticalPingsRef.current.forEach(ping => {
+      if (Date.now() < ping.expiresAt) {
+        const mx = mapToMiniX(ping.x);
+        const my = mapToMiniY(ping.y);
+        ctx.save();
+        ctx.fillStyle = ping.color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        const pSize = isMapEnlarged ? 7 : 4;
+        ctx.beginPath();
+        ctx.arc(mx, my, pSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Anneau pulsant sur minimap
+        const pulse = ((Date.now() - ping.createdAt) % 1000) / 1000;
+        ctx.globalAlpha = 1 - pulse;
+        ctx.beginPath();
+        ctx.arc(mx, my, pSize + pulse * (isMapEnlarged ? 12 : 6), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    });
+
     // Dessiner joueurs en vie (points blancs, joueur actuel en jaune/orange, alliés en bleu)
+
     characters.forEach(char => {
       if (!char.alive) return;
       
@@ -5385,8 +5955,19 @@ export default function App() {
               activeAgent={activeAgent}
               debugNinjaEnabled={debugNinjaEnabled}
               onToggleDebugNinja={() => setDebugNinjaEnabled(prev => !prev)}
+              onOpenTacticalWheel={() => setIsTacticalWheelOpen(true)}
             />
           )}
+
+          {/* ROUE D'ORDRES TACTIQUES IA */}
+          <TacticalWheel
+            isOpen={isTacticalWheelOpen}
+            onClose={() => setIsTacticalWheelOpen(false)}
+            onSelectOrder={handleSelectTacticalOrder}
+            teammateName={mateRef.current ? mateRef.current.name : activeAgent?.name || 'Escouade IA'}
+            agentSpecialty={activeAgent?.tactics?.specialty}
+          />
+
 
           {/* SENSOR JOYSTICKS TACTILES SENSITIFS MOBILE */}
           {controlOption === 'touch' && playerRef.current && playerRef.current.alive && !spectatorMode && !isMapEnlarged && (
@@ -5529,23 +6110,30 @@ export default function App() {
               <div className={`w-2.5 h-2.5 rounded-full animate-ping absolute ${
                 weatherEvent === 'magma_comets' ? 'bg-rose-500' :
                   weatherEvent === 'acid_rain' ? 'bg-green-500' :
-                    'bg-amber-500'
+                    weatherEvent === 'thunderstorm' ? 'bg-cyan-400' :
+                      weatherEvent === 'blizzard' ? 'bg-blue-300' :
+                        'bg-amber-500'
               }`} />
               <div className={`w-2.5 h-2.5 rounded-full relative ${
                 weatherEvent === 'magma_comets' ? 'bg-rose-500 shadow-[0_0_8px_#ef4444]' :
                   weatherEvent === 'acid_rain' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' :
-                    'bg-amber-500 shadow-[0_0_8px_#f59e0b]'
+                    weatherEvent === 'thunderstorm' ? 'bg-cyan-400 shadow-[0_0_8px_#22d3ee]' :
+                      weatherEvent === 'blizzard' ? 'bg-blue-300 shadow-[0_0_8px_#93c5fd]' :
+                        'bg-amber-500 shadow-[0_0_8px_#f59e0b]'
               }`} />
               <span className="text-[11px] font-black font-sans tracking-widest text-slate-200 uppercase">
                 {weatherEvent === 'magma_comets' && '☄️ AVERSE DE COMÈTES MAGMA'}
                 {weatherEvent === 'acid_rain' && '🌧️ PLUIE ACIDE CORROSIVE'}
                 {weatherEvent === 'sandstorm' && '🌪️ TEMPÊTE DE SABLE DESERTIQUE'}
+                {weatherEvent === 'thunderstorm' && '⚡ ORAGE ÉLECTRIQUE TACTIQUE'}
+                {weatherEvent === 'blizzard' && '❄️ BLIZZARD ARCTIQUE GLACIAL'}
               </span>
               <span className="text-[11px] font-mono font-black text-slate-100 bg-slate-800/90 py-0.5 px-2 rounded-md">
                 {weatherDuration}s
               </span>
             </div>
           )}
+
 
           {centerNotification && Date.now() < centerNotification.expiresAt && (
             <div className="absolute top-28 left-1/2 -translate-x-1/2 bg-slate-950/95 border-2 border-amber-500 rounded-2xl px-6 py-3 shadow-[0_0_25px_rgba(245,158,11,0.35)] text-center z-50 max-w-md pointer-events-none transition-all duration-300 transform scale-100">

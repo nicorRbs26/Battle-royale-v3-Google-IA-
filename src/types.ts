@@ -138,7 +138,7 @@ export interface Character {
   emoteExpiresAt?: number;
 
   // AI State Variables
-  aiState: 'search_loot' | 'combat' | 'run_zone' | 'heal' | 'revive_ally' | 'idle';
+  aiState: 'search_loot' | 'combat' | 'run_zone' | 'heal' | 'revive_ally' | 'idle' | 'follow_leader' | 'hold_pos' | 'assault_target' | 'retreat_heal' | 'scavenge_area';
   targetCharacterId?: string;
   targetLootId?: string;
   targetX?: number;
@@ -150,7 +150,44 @@ export interface Character {
   revivedBy?: string;
   tempSpeedMultiplier?: number;
   aiAgent?: AIAgentConfig;
+  tacticalOrder?: TacticalOrder;
 }
+
+export type TacticalOrderType = 'follow' | 'hold' | 'attack' | 'heal' | 'scavenge';
+
+export interface TacticalOrder {
+  id: string;
+  type: TacticalOrderType;
+  x: number;
+  y: number;
+  assignedAt: number;
+  label: string;
+  targetCharacterId?: string;
+}
+
+export interface TacticalPing {
+  id: string;
+  type: TacticalOrderType;
+  x: number;
+  y: number;
+  createdAt: number;
+  expiresAt: number;
+  label: string;
+  color: string;
+}
+
+export interface SquadRadioMessage {
+  id: string;
+  agentName: string;
+  agentRole?: string;
+  text: string;
+  timestamp: number;
+  avatarColor: string;
+  type: 'order' | 'enemy' | 'shield' | 'storm' | 'kill' | 'revive';
+}
+
+export type WeatherEventType = 'none' | 'acid_rain' | 'sandstorm' | 'magma_comets' | 'thunderstorm' | 'blizzard';
+
 
 export interface Projectile {
   id: string;

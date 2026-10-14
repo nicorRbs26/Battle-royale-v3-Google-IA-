@@ -295,5 +295,97 @@ describe('Google Drive AI Agents Integration (googleDriveService.ts)', () => {
   });
 });
 
+describe('Tactical Orders & Tactical Wheel (TacticalWheel.tsx)', () => {
+  it('should define all 5 core tactical orders', async () => {
+    const { TACTICAL_ORDERS } = await import('./components/TacticalWheel');
+    expect(TACTICAL_ORDERS).toHaveLength(5);
+    const orderTypes = TACTICAL_ORDERS.map(o => o.type);
+    expect(orderTypes).toContain('follow');
+    expect(orderTypes).toContain('hold');
+    expect(orderTypes).toContain('attack');
+    expect(orderTypes).toContain('heal');
+    expect(orderTypes).toContain('scavenge');
+  });
+
+  it('should have distinct colors and icons for each tactical order', async () => {
+    const { TACTICAL_ORDERS } = await import('./components/TacticalWheel');
+    const colors = new Set(TACTICAL_ORDERS.map(o => o.color));
+    expect(colors.size).toBe(5);
+    TACTICAL_ORDERS.forEach(order => {
+      expect(order.icon).toBeTruthy();
+      expect(order.title).toBeTruthy();
+      expect(order.subtitle).toBeTruthy();
+    });
+  });
+});
+
+describe('Procedural Arena & Tactical Structures (utils.ts)', () => {
+  it('should generate radar stations, power generators, bunkers and craters across biomes', async () => {
+    const { generateProceduralArena } = await import('./utils');
+    const arena = generateProceduralArena('military_forest');
+    expect(arena.buildings.length).toBeGreaterThan(10);
+
+    const radar = arena.buildings.find(b => b.subType === 'radar_station');
+    expect(radar).toBeDefined();
+    expect(radar?.type).toBe('structure');
+
+    const generator = arena.buildings.find(b => b.subType === 'power_generator');
+    expect(generator).toBeDefined();
+
+    const bunker = arena.buildings.find(b => b.subType === 'command_bunker');
+    expect(bunker).toBeDefined();
+
+    const crater = arena.buildings.find(b => b.subType === 'crater_impact');
+    expect(crater).toBeDefined();
+  });
+
+  it('should generate tactical points of interest in industrial and desert arenas as well', async () => {
+    const { generateProceduralArena } = await import('./utils');
+    const industrial = generateProceduralArena('industrial');
+    expect(industrial.buildings.some(b => b.subType === 'radar_station')).toBe(true);
+
+    const desert = generateProceduralArena('skeletal_desert');
+    expect(desert.buildings.some(b => b.subType === 'radar_station')).toBe(true);
+    expect(desert.buildings.some(b => b.subType === 'command_bunker')).toBe(true);
+  });
+});
+
+describe('Voice Comms Service (voiceComms.ts)', () => {
+  it('should allow toggling mute and adjusting volume', async () => {
+    const { voiceComms } = await import('./services/voiceComms');
+    const initialMuted = voiceComms.getSettings().muted;
+    const toggled = voiceComms.toggleMute();
+    expect(toggled).toBe(!initialMuted);
+    
+    // Toggle back
+    voiceComms.toggleMute();
+    expect(voiceComms.getSettings().muted).toBe(initialMuted);
+
+    // Test volume clamping
+    voiceComms.setVolume(1.5);
+    expect(voiceComms.getSettings().volume).toBe(1);
+    voiceComms.setVolume(-0.5);
+    expect(voiceComms.getSettings().volume).toBe(0);
+    voiceComms.setVolume(0.8);
+    expect(voiceComms.getSettings().volume).toBe(0.8);
+  });
+
+  it('should dispatch broadcast messages to subscribers', async () => {
+    const { voiceComms } = await import('./services/voiceComms');
+    let receivedMessage = null;
+    const unsubscribe = voiceComms.subscribe(msg => {
+      receivedMessage = msg;
+    });
+
+    voiceComms.broadcastVoice(undefined, 'Message test de transmission radio', 'order', true);
+    expect(receivedMessage).not.toBeNull();
+    expect((receivedMessage as any)?.text).toBe('Message test de transmission radio');
+    expect((receivedMessage as any)?.type).toBe('order');
+
+    unsubscribe();
+  });
+});
+
+
 
 
