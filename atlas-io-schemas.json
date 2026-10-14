@@ -1,0 +1,648 @@
+{
+  "schemas": {
+    "GameDirector": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "pitch": { "type": "string", "description": "Pitch initial ou vision du jeu/application" },
+          "genre": { "type": "string", "description": "Genre du projet (ex: Battle Royale, RPG, Dashboard SaaS)" },
+          "targetAudience": { "type": "string", "description": "Public cible et persona visé" },
+          "pillars": { "type": "array", "items": { "type": "string" }, "description": "Piliers de design directeurs" }
+        },
+        "required": ["pitch", "genre"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "gdd": {
+            "type": "object",
+            "properties": {
+              "concept": { "type": "string" },
+              "coreGameplay": { "type": "string" },
+              "narrative": { "type": "string" },
+              "artDirection": { "type": "string" }
+            },
+            "required": ["concept", "coreGameplay", "narrative", "artDirection"]
+          },
+          "creativeValidation": { "type": "boolean" },
+          "nextSteps": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["gdd", "creativeValidation"]
+      }
+    },
+    "CoreArchitect": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "specs": { "type": "string", "description": "Cahier des charges ou GDD validé" },
+          "features": { "type": "array", "items": { "type": "string" }, "description": "Liste des fonctionnalités à orchestrer" },
+          "constraints": { "type": "array", "items": { "type": "string" }, "description": "Contraintes techniques et scalabilité" }
+        },
+        "required": ["specs", "features"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "architecture": {
+            "type": "object",
+            "properties": {
+              "modules": { "type": "array", "items": { "type": "string" } },
+              "interfaces": { "type": "array", "items": { "type": "string" } },
+              "mermaidDiagram": { "type": "string" },
+              "dataFlow": { "type": "string" }
+            },
+            "required": ["modules", "interfaces", "mermaidDiagram"]
+          },
+          "decisionLog": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["architecture"]
+      }
+    },
+    "Brainstormer": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "theme": { "type": "string", "description": "Thématique ou univers" },
+          "scope": { "type": "string", "enum": ["jeu", "web"], "description": "Domaine de recherche" },
+          "count": { "type": "integer", "default": 3, "description": "Nombre de concepts à générer" }
+        },
+        "required": ["theme"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "concepts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "pitch": { "type": "string" },
+                "keyMechanics": { "type": "array", "items": { "type": "string" } },
+                "uniqueHooks": { "type": "string" }
+              },
+              "required": ["title", "pitch", "keyMechanics"]
+            }
+          }
+        },
+        "required": ["concepts"]
+      }
+    },
+    "GameMechanic": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "mechanicName": { "type": "string", "description": "Nom du système à concevoir" },
+          "intent": { "type": "string", "description": "Objectif d'équilibrage et sensation de jeu" },
+          "constraints": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["mechanicName", "intent"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "spec": {
+            "type": "object",
+            "properties": {
+              "mathematicalFormulas": { "type": "array", "items": { "type": "string" } },
+              "balanceTables": { "type": "object" },
+              "progressionCurves": { "type": "string" },
+              "edgeCases": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["mathematicalFormulas", "balanceTables"]
+          }
+        },
+        "required": ["spec"]
+      }
+    },
+    "GameplayCrafter": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "mechanicSpec": { "type": "object", "description": "Spécification fournie par GameMechanic" },
+          "engine": { "type": "string", "description": "Moteur cible (Phaser, React/Canvas, Godot, Unity)" }
+        },
+        "required": ["mechanicSpec"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "implementationFiles": { "type": "array", "items": { "type": "string" } },
+          "testScenarios": { "type": "array", "items": { "type": "string" } },
+          "prototypeStatus": { "type": "string", "enum": ["ready_for_playtest", "needs_balance", "blocked"] }
+        },
+        "required": ["implementationFiles", "testScenarios", "prototypeStatus"]
+      }
+    },
+    "Prototyper": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "concept": { "type": "string" },
+          "stackPreference": { "type": "string" },
+          "timeboxHours": { "type": "number", "default": 4 }
+        },
+        "required": ["concept"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "prototypeCode": { "type": "string" },
+          "executionInstructions": { "type": "string" },
+          "validationMetrics": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["prototypeCode", "executionInstructions"]
+      }
+    },
+    "AIStrategist": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "entityType": { "type": "string", "description": "Type de NPC (ex: Bot sniper, Boss de raid, Allié)" },
+          "environmentType": { "type": "string" },
+          "aiModelType": { "type": "string", "enum": ["FSM", "BehaviorTree", "GOAP", "UtilityAI"] }
+        },
+        "required": ["entityType", "environmentType"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "aiTreeDefinition": { "type": "object" },
+          "pathfindingConfig": { "type": "object" },
+          "stateTransitions": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["aiTreeDefinition", "stateTransitions"]
+      }
+    },
+    "AnimationMaestro": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "rig": { "type": "string" },
+          "actions": { "type": "array", "items": { "type": "string" } },
+          "style": { "type": "string" }
+        },
+        "required": ["rig", "actions"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "stateMachineConfig": { "type": "object" },
+          "blendTrees": { "type": "array", "items": { "type": "string" } },
+          "keyframesSpecification": { "type": "object" }
+        },
+        "required": ["stateMachineConfig", "blendTrees"]
+      }
+    },
+    "GraphicsPioneer": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "assetList": { "type": "array", "items": { "type": "string" } },
+          "artStyle": { "type": "string" },
+          "polyBudget": { "type": "integer" }
+        },
+        "required": ["assetList", "artStyle"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "assetSpecs": { "type": "array", "items": { "type": "object" } },
+          "shaderCode": { "type": "string" },
+          "pipelineGuidelines": { "type": "string" }
+        },
+        "required": ["assetSpecs"]
+      }
+    },
+    "PixelCrafter": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "sprites": { "type": "array", "items": { "type": "string" } },
+          "tileSize": { "type": "string", "enum": ["8x8", "16x16", "32x32", "64x64"], "default": "16x16" },
+          "palette": { "type": "string" }
+        },
+        "required": ["sprites"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "spritesheetMetadata": { "type": "object" },
+          "colorPaletteHex": { "type": "array", "items": { "type": "string" } },
+          "integrationGuide": { "type": "string" }
+        },
+        "required": ["spritesheetMetadata", "colorPaletteHex"]
+      }
+    },
+    "SoundSculptor": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "soundEvents": { "type": "array", "items": { "type": "string" } },
+          "ambientTheme": { "type": "string" },
+          "spatialAudio": { "type": "boolean", "default": true }
+        },
+        "required": ["soundEvents"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "audioEvents": { "type": "array", "items": { "type": "object" } },
+          "busRouting": { "type": "object" },
+          "webAudioSynthCode": { "type": "string" }
+        },
+        "required": ["audioEvents", "busRouting"]
+      }
+    },
+    "UIAlchemist": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "screens": { "type": "array", "items": { "type": "string" } },
+          "theme": { "type": "string" },
+          "accessibilityStandard": { "type": "string", "default": "WCAG_AA" }
+        },
+        "required": ["screens"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "designTokens": { "type": "object" },
+          "wireframes": { "type": "array", "items": { "type": "object" } },
+          "interactionGuidelines": { "type": "string" }
+        },
+        "required": ["designTokens", "wireframes"]
+      }
+    },
+    "UIXpert": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "designTokens": { "type": "object" },
+          "screens": { "type": "array", "items": { "type": "string" } },
+          "framework": { "type": "string", "default": "React" }
+        },
+        "required": ["designTokens", "screens"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "componentHierarchy": { "type": "object" },
+          "responsiveBreakpoints": { "type": "object" },
+          "navigationFlow": { "type": "object" }
+        },
+        "required": ["componentHierarchy", "responsiveBreakpoints"]
+      }
+    },
+    "CodeSculptor": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "task": { "type": "string" },
+          "language": { "type": "string", "enum": ["typescript", "javascript", "python", "csharp"] },
+          "mode": { "type": "string", "enum": ["concis", "pedagogique"], "default": "concis" }
+        },
+        "required": ["task", "language"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "unitTests": { "type": "string" },
+          "architectureNotes": { "type": "string" }
+        },
+        "required": ["code", "unitTests"]
+      }
+    },
+    "ArchitecteWeb": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "requirements": { "type": "string" },
+          "expectedScale": { "type": "string" }
+        },
+        "required": ["requirements"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "frontendFramework": { "type": "string" },
+          "backendFramework": { "type": "string" },
+          "stateManagement": { "type": "string" },
+          "cachingStrategy": { "type": "string" },
+          "directoryTree": { "type": "string" }
+        },
+        "required": ["frontendFramework", "backendFramework", "directoryTree"]
+      }
+    },
+    "TechStackAdvisor": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "projectType": { "type": "string", "enum": ["jeu", "web", "hybride"] },
+          "targetPlatforms": { "type": "array", "items": { "type": "string" } },
+          "teamExpertise": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["projectType", "targetPlatforms"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "recommendedStack": { "type": "object" },
+          "comparedAlternatives": { "type": "array", "items": { "type": "object" } },
+          "rationale": { "type": "string" }
+        },
+        "required": ["recommendedStack", "comparedAlternatives", "rationale"]
+      }
+    },
+    "EngineWhisperer": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "engine": { "type": "string", "enum": ["Unity", "Unreal", "Godot", "Phaser", "HTML5 Canvas"] },
+          "mode": { "type": "string", "enum": ["conseil", "technique"] },
+          "query": { "type": "string" }
+        },
+        "required": ["engine", "mode", "query"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "configuration": { "type": "object" },
+          "pipelineOptimizations": { "type": "array", "items": { "type": "string" } },
+          "benchmarkRecommendations": { "type": "string" }
+        },
+        "required": ["configuration"]
+      }
+    },
+    "DataAlchemist": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "entities": { "type": "array", "items": { "type": "string" } },
+          "persistenceType": { "type": "string", "enum": ["sql", "nosql", "local_storage", "hybrid"] }
+        },
+        "required": ["entities", "persistenceType"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "schemaDefinitions": { "type": "object" },
+          "saveLoadPipelines": { "type": "string" },
+          "indexesAndConstraints": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["schemaDefinitions", "saveLoadPipelines"]
+      }
+    },
+    "Atlas_DataAnalyst": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "kpiList": { "type": "array", "items": { "type": "string" } },
+          "analyticsEventStream": { "type": "string" }
+        },
+        "required": ["kpiList"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "conversionFunnels": { "type": "object" },
+          "churnRiskFactors": { "type": "array", "items": { "type": "string" } },
+          "actionableRecommendations": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["conversionFunnels", "actionableRecommendations"]
+      }
+    },
+    "PhysicsGuru": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "collisionSystem": { "type": "string" },
+          "physicsEntities": { "type": "array", "items": { "type": "string" } },
+          "gravityAndForces": { "type": "object" }
+        },
+        "required": ["collisionSystem", "physicsEntities"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "collisionLayers": { "type": "object" },
+          "solverParameters": { "type": "object" },
+          "optimizationChecklist": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["collisionLayers", "solverParameters"]
+      }
+    },
+    "PerfOptimizer": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "targetPlatform": { "type": "string" },
+          "symptoms": { "type": "array", "items": { "type": "string" } },
+          "currentFpsOrLatency": { "type": "string" }
+        },
+        "required": ["targetPlatform", "symptoms"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "diagnosedBottlenecks": { "type": "array", "items": { "type": "string" } },
+          "targetedOptimizations": { "type": "array", "items": { "type": "object" } },
+          "beforeAfterBenchmarkMetrics": { "type": "object" }
+        },
+        "required": ["diagnosedBottlenecks", "targetedOptimizations"]
+      }
+    },
+    "NetworkNinja": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "maxPlayers": { "type": "integer" },
+          "topology": { "type": "string", "enum": ["client-server", "p2p", "lockstep"] },
+          "tickRate": { "type": "integer", "default": 30 }
+        },
+        "required": ["maxPlayers", "topology"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "syncProtocol": { "type": "string" },
+          "lagCompensationStrategy": { "type": "string" },
+          "bandwidthEstimatePerPlayer": { "type": "string" }
+        },
+        "required": ["syncProtocol", "lagCompensationStrategy"]
+      }
+    },
+    "SecuritySentinel": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "auditScope": { "type": "array", "items": { "type": "string" } },
+          "threatModels": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["auditScope"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "vetoVerdict": { "type": "string", "enum": ["APPROVED", "VETO_REJECTED", "APPROVED_WITH_CONDITIONS"] },
+          "vulnerabilitiesFound": { "type": "array", "items": { "type": "object" } },
+          "antiCheatHardening": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["vetoVerdict", "vulnerabilitiesFound"]
+      }
+    },
+    "QAOverlord": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "featureToTest": { "type": "string" },
+          "testTypes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["featureToTest"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "vetoVerdict": { "type": "string", "enum": ["RELEASE_APPROVED", "VETO_BLOCKED", "CONDITIONAL_APPROVAL"] },
+          "testPlan": { "type": "array", "items": { "type": "object" } },
+          "edgeCasesCoverage": { "type": "string" }
+        },
+        "required": ["vetoVerdict", "testPlan"]
+      }
+    },
+    "DebugNinja": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "bugDescription": { "type": "string" },
+          "stackTrace": { "type": "string" },
+          "reproductionSteps": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["bugDescription"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "rootCauseAnalysis": { "type": "string" },
+          "codeFixDiff": { "type": "string" },
+          "regressionPrevention": { "type": "string" }
+        },
+        "required": ["rootCauseAnalysis", "codeFixDiff"]
+      }
+    },
+    "DevOpsDynamo": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "buildTargets": { "type": "array", "items": { "type": "string" } },
+          "ciPlatform": { "type": "string", "default": "GitHub Actions" }
+        },
+        "required": ["buildTargets"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "ciPipelineYaml": { "type": "string" },
+          "dockerfile": { "type": "string" },
+          "deploymentChecklist": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["ciPipelineYaml", "deploymentChecklist"]
+      }
+    },
+    "ToolSmith": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "repetitiveWorkflow": { "type": "string" },
+          "targetLanguage": { "type": "string", "default": "Python" }
+        },
+        "required": ["repetitiveWorkflow"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "toolScript": { "type": "string" },
+          "cliDocumentation": { "type": "string" },
+          "productivityGainEstimate": { "type": "string" }
+        },
+        "required": ["toolScript", "cliDocumentation"]
+      }
+    },
+    "LocalizationGuru": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "sourceStrings": { "type": "object" },
+          "locales": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["sourceStrings", "locales"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "localizedBundles": { "type": "object" },
+          "culturalAdaptationNotes": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["localizedBundles"]
+      }
+    },
+    "MonetizationMaven": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "gameplayLoop": { "type": "string" },
+          "modelType": { "type": "string", "enum": ["f2p", "premium", "battle_pass", "subscription"] }
+        },
+        "required": ["gameplayLoop", "modelType"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "economySpec": { "type": "object" },
+          "retentionImpact": { "type": "string" },
+          "gdprAndLegalCompliance": { "type": "string" }
+        },
+        "required": ["economySpec"]
+      }
+    },
+    "LegalLiaison": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "assetLicenses": { "type": "array", "items": { "type": "string" } },
+          "featuresAudited": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["assetLicenses"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "vetoVerdict": { "type": "string", "enum": ["LEGAL_COMPLIANT", "VETO_STOP_LEGAL_RISK", "AUDIT_REQUIRED"] },
+          "complianceReport": { "type": "string" },
+          "recommendedActions": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["vetoVerdict", "complianceReport"]
+      }
+    },
+    "CommunityChampion": {
+      "inputs": {
+        "type": "object",
+        "properties": {
+          "milestone": { "type": "string" },
+          "channels": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["milestone"]
+      },
+      "outputs": {
+        "type": "object",
+        "properties": {
+          "announcements": { "type": "object" },
+          "devlogSummary": { "type": "string" },
+          "feedbackCollectionStrategy": { "type": "string" }
+        },
+        "required": ["announcements", "devlogSummary"]
+      }
+    }
+  }
+}

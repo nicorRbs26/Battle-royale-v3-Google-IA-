@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Battle Royale 2D</title>
+    <meta name="description" content="Un jeu de Battle Royale 2D immersif en vue de dessus avec carte procédurale, système de statistiques, cosmétiques, moteur de textures génératif par IA et événements climatiques interactifs." />
+    <meta property="og:title" content="Battle Royale 2D" />
+    <meta property="og:description" content="Un jeu de Battle Royale 2D immersif en vue de dessus avec carte procédurale, système de statistiques, cosmétiques, moteur de textures génératif par IA et événements climatiques interactifs." />
+    <script>
+      // Suppression proactive des erreurs WebSocket HMR conformément aux contraintes d'environnement
+      window.addEventListener('error', function(event) {
+        if (
+          (event.filename && event.filename.includes('@vite/client')) ||
+          (event.message && (
+            event.message.includes('WebSocket') ||
+            event.message.includes('createWebSocketModuleRunnerTransport') ||
+            event.message.includes('failed to connect')
+          ))
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return true;
+        }
+      }, true);
+
+      window.addEventListener('unhandledrejection', function(event) {
+        var reasonStr = String(event.reason || '');
+        var stackStr = String((event.reason && event.reason.stack) || '');
+        if (
+          reasonStr.includes('WebSocket') ||
+          reasonStr.includes('createWebSocketModuleRunnerTransport') ||
+          stackStr.includes('@vite/client') ||
+          stackStr.includes('createWebSocketModuleRunnerTransport')
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      });
+    </script>
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased overflow-hidden select-none">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

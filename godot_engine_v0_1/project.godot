@@ -1,0 +1,50 @@
+# ============================================================================
+# GODOT 4.5+ BATTLE ROYALE ENGINE V0.1
+# Project Configuration File
+# ============================================================================
+
+config_version=5
+
+[application]
+
+config/name="Battle Royale Engine V0.1"
+config/description="Moteur de jeu Battle Royale professionnel, modulaire, optimisé multiplateforme (Windows, Linux, Android)."
+config/version="0.1.0"
+run/main_scene="res://ui/MainMenu.tscn"
+config/features=PackedStringArray("4.5", "Forward Plus", "Mobile")
+config/icon="res://assets/icon.svg"
+
+[autoload]
+
+GameManager="*res://autoload/GameManager.gd"
+SceneManager="*res://autoload/SceneManager.gd"
+InputManager="*res://autoload/InputManager.gd"
+AudioManager="*res://autoload/AudioManager.gd"
+SaveManager="*res://autoload/SaveManager.gd"
+SettingsManager="*res://autoload/SettingsManager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/mode=0
+window/size/resizable=true
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+pointing/emulate_mouse_from_touch=true
+
+[rendering]
+
+renderer/rendering_method="mobile"
+textures/vram_compression/import_s3tc_bptc=true
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.08, 0.09, 0.12, 1)
+
+[debug]
+
+settings/stdout/verbose_stdout=false
+file_logging/enable_file_logging=true
