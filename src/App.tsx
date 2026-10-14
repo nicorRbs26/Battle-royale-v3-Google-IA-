@@ -3783,6 +3783,19 @@ export default function App() {
           ctx.strokeStyle = theme.textureDetailColor;
           ctx.fillStyle = theme.textureDetailColor;
           
+          // Pattern complexe : Circuits / Réseaux de lignes
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(sx + offsetX, sy + offsetY);
+          ctx.lineTo(sx + offsetX + 40 * Math.sin(seed), sy + offsetY + 40 * Math.cos(seed));
+          ctx.lineTo(sx + offsetX + 20, sy + offsetY + 20);
+          ctx.stroke();
+
+          // Pattern complexe : Points focalisés
+          ctx.beginPath();
+          ctx.arc(sx + offsetX, sy + offsetY, 2, 0, Math.PI * 2);
+          ctx.fill();
+
           if (theme.textureStyle === 'stars') {
             const size = 2 + Math.abs(seed % 4);
             ctx.beginPath();
@@ -3880,6 +3893,82 @@ export default function App() {
         ctx.stroke();
       }
     }
+
+    // --- RENDRE LES DÉTAILS DE SOL PROCÉDURAUX RICHES ---
+    ctx.save();
+    const detailStep = 110;
+    const minDetailX = Math.max(0, Math.floor(visibleMinX / detailStep) * detailStep);
+    const maxDetailX = Math.min(MAP_SIZE, Math.ceil(visibleMaxX / detailStep) * detailStep);
+    const minDetailY = Math.max(0, Math.floor(visibleMinY / detailStep) * detailStep);
+    const maxDetailY = Math.min(MAP_SIZE, Math.ceil(visibleMaxY / detailStep) * detailStep);
+
+    for (let dx = minDetailX; dx <= maxDetailX; dx += detailStep) {
+      for (let dy = minDetailY; dy <= maxDetailY; dy += detailStep) {
+        const seed = Math.sin(dx * 43.12 + dy * 17.84) * 43758.5453;
+        const subTypeSeed = seed % 1;
+        const sx = toScreenX(dx + (subTypeSeed * 40 - 20));
+        const sy = toScreenY(dy + (((seed * 2.1) % 1) * 40 - 20));
+
+        if (isOutsideFrustum(dx, dy, 60)) continue;
+
+        if (currentArena === 'military_forest') {
+          if (subTypeSeed < 0.45) {
+            ctx.fillStyle = '#166534';
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx - 4, sy - 9);
+            ctx.moveTo(sx + 2, sy);
+            ctx.lineTo(sx + 7, sy - 11);
+            ctx.stroke();
+          } else if (subTypeSeed < 0.7) {
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.arc(sx, sy, 2 + subTypeSeed * 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (currentArena === 'cyber_neon') {
+          if (subTypeSeed < 0.6) {
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + 18, sy);
+            ctx.lineTo(sx + 18, sy + 18);
+            ctx.stroke();
+            ctx.fillStyle = '#f43f5e';
+            ctx.fillRect(sx + 15, sy + 15, 5, 5);
+          }
+        } else if (currentArena === 'skeletal_desert') {
+          if (subTypeSeed < 0.5) {
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 12, 0, Math.PI);
+            ctx.stroke();
+          }
+        } else if (currentArena === 'lava_ruins') {
+          if (subTypeSeed < 0.5) {
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + 14, sy + 10);
+            ctx.lineTo(sx + 8, sy + 20);
+            ctx.stroke();
+          }
+        } else if (currentArena === 'industrial') {
+          if (subTypeSeed < 0.5) {
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+            ctx.beginPath();
+            ctx.arc(sx, sy, 9, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+    }
+    ctx.restore();
 
     // --- RENDRE LES TUILES ENVIRONNEMENTALES PROCÉDURALES ---
     const envTiles = environmentalTilesRef.current;
