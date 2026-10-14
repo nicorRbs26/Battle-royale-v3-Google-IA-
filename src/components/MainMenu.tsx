@@ -163,7 +163,7 @@ export default function MainMenu({
   };
 
   return (
-    <div id="main-menu-root" className="max-w-4xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-8 relative overflow-x-hidden" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
+    <div id="main-menu-root" className="h-screen w-screen flex flex-col items-center justify-start overflow-y-auto touch-pan-y overscroll-contain py-8 relative" style={{ touchAction: 'pan-y' }} onTouchStart={() => triggerHaptic('light')}>
       
       {/* BOUTON PLEIN ÉCRAN */}
       <div className="absolute top-4 right-4 z-20">
