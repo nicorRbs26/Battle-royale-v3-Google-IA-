@@ -4,7 +4,7 @@ import SkinCustomizer from './SkinCustomizer';
 import TouchHUDCustomizer from './TouchHUDCustomizer';
 import { GodotEngineStudio } from './GodotEngineStudio';
 import { LEVEL_REWARDS, getXpRequired } from '../progression';
-import { CUSTOM_WEAPONS } from '../utils';
+import { CUSTOM_WEAPONS, toggleNativeFullscreen } from '../utils';
 import { fetchLeaderboards, LeaderboardEntry } from '../firebaseService';
 import { hasFirebase, auth } from '../firebase';
 
@@ -162,10 +162,21 @@ export default function MainMenu({
   };
 
   return (
-    <div id="main-menu-root" className="max-w-4xl w-full mx-auto px-4 py-8">
+    <div id="main-menu-root" className="max-w-4xl w-full mx-auto px-2 sm:px-4 py-4 sm:py-8 relative overflow-x-hidden">
       
+      {/* BOUTON PLEIN ÉCRAN */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          onClick={toggleNativeFullscreen}
+          className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-amber-500 text-amber-400 text-xs font-bold shadow-lg flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+          title="Activer/Désactiver le mode plein écran"
+        >
+          <span>⛶</span> Plein Écran
+        </button>
+      </div>
+
       {/* LOGO STATS TITRE */}
-      <div className="text-center mb-6 relative">
+      <div className="text-center mb-6 relative pt-4 sm:pt-0">
         <span className="text-6xl filter drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]">🌀</span>
         <h1 className="text-5xl md:text-6xl font-black font-sans uppercase tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 drop-shadow">
           Battle Royale 2D

@@ -1222,11 +1222,23 @@ export default function App() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Gérer redimensionnement
+    // Gérer redimensionnement et haute résolution (HiDPI / Retina pour smartphones et tablettes)
     const parent = canvas.parentElement;
-    if (parent && (canvas.width !== parent.clientWidth || canvas.height !== parent.clientHeight)) {
-      canvas.width = parent.clientWidth;
-      canvas.height = parent.clientHeight;
+    if (parent) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const displayW = parent.clientWidth;
+      const displayH = parent.clientHeight;
+      const targetW = Math.round(displayW * dpr);
+      const targetH = Math.round(displayH * dpr);
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+        canvas.style.width = `${displayW}px`;
+        canvas.style.height = `${displayH}px`;
+        ctx.resetTransform();
+        ctx.scale(dpr, dpr);
+      }
     }
 
     // Calcul du FPS en temps réel pour l'inspecteur DebugNinja

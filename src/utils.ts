@@ -1329,3 +1329,21 @@ export function generateMapStructures(): Building[] {
   return generateProceduralArena(randomTheme).buildings;
 }
 
+// Plein écran natif adaptatif
+export function toggleNativeFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.warn('Error attempting to enable fullscreen:', err);
+    });
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+}
+
+export function isNativeFullscreen(): boolean {
+  return !!document.fullscreenElement;
+}
+
+

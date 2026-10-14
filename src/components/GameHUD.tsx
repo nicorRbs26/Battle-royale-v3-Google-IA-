@@ -2,6 +2,7 @@ import React from 'react';
 import { Character, PlayMode, AIAgentConfig } from '../types';
 import { TouchHUDLayout } from './TouchHUDCustomizer';
 import { RadioChatter } from './RadioChatter';
+import { toggleNativeFullscreen } from '../utils';
 
 interface GameHUDProps {
   player: Character;
@@ -191,16 +192,25 @@ export default function GameHUD({
           <RadioChatter onOpenTacticalWheel={onOpenTacticalWheel} showWheelButton={true} />
         </div>
 
-        {/* FEED DE KILLS (FLUX D'ÉLIMINATIONS) */}
-        <div className="flex flex-col gap-1.5 max-w-[280px] w-full text-right bg-slate-950/40 p-2 rounded-lg max-h-[140px] overflow-hidden">
-          {killFeed.slice(-4).map((entry) => (
-            <div key={entry.id} className="text-[11px] text-slate-300 bg-slate-950/80 px-2 py-1 rounded border border-slate-900/60 font-sans truncate shadow-md animate-fade-in-down">
-              {entry.text}
-            </div>
-          ))}
-          {killFeed.length === 0 && (
-            <div className="text-[9px] text-slate-600 uppercase font-sans tracking-tight">Le match commence...</div>
-          )}
+        {/* FEED DE KILLS ET PLEIN ÉCRAN */}
+        <div className="flex flex-col items-end gap-2 pointer-events-auto">
+          <button
+            onClick={toggleNativeFullscreen}
+            className="px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-700 hover:border-amber-500 text-amber-400 text-[10px] font-bold shadow-md flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+            title="Plein écran"
+          >
+            <span>⛶</span> Plein Écran
+          </button>
+          <div className="flex flex-col gap-1.5 max-w-[280px] w-full text-right bg-slate-950/40 p-2 rounded-lg max-h-[140px] overflow-hidden">
+            {killFeed.slice(-4).map((entry) => (
+              <div key={entry.id} className="text-[11px] text-slate-300 bg-slate-950/80 px-2 py-1 rounded border border-slate-900/60 font-sans truncate shadow-md animate-fade-in-down">
+                {entry.text}
+              </div>
+            ))}
+            {killFeed.length === 0 && (
+              <div className="text-[9px] text-slate-600 uppercase font-sans tracking-tight">Le match commence...</div>
+            )}
+          </div>
         </div>
       </div>
 
